@@ -2,57 +2,39 @@
 # of truth for presets/presets.json, which scripts/build_presets.py generates
 # from it - do not edit presets.json by hand, validate.py rejects that.
 #
-# Categories, the same four for every vendor, top to bottom:
+# Four categories, top to bottom, the same for every vendor:
 #   flagship  - THE model the vendor positions as its best. Exactly one per vendor.
-#   frontier  - the strong model one step below, for serious everyday work
-#   workhorse - the everyday model, good and reasonably priced
-#   cheap     - cost-effective: the small fast one for simple tasks
-#
-# A category is a POSITION IN THE VENDOR'S LINE-UP, not a price. The vendor
-# names its tiers (Fable > Opus > Sonnet > Haiku; Astra > Terra > Sol > Luna;
-# Pro > Flash), and each vendor's `ladder` below records those names per category.
-# validate.py checks that every model sits on the rung its name says. A new
-# version of a rung (Opus 5 -> Opus 5.5) inherits the category; a new NAME the
-# ladder does not know is reported by the monthly check, never guessed.
-#
-# Every model here is one preset in the chat; its title is built from vendor,
-# category, label and price, so a new version replaces the entry in place
-# (keep the presetId) and the mother sees the same preset with a new version.
+#   frontier  - the strong model one step below
+#   workhorse - the everyday model
+#   cheap     - cost-effective, for simple tasks
+# The category is the owner's call, by how the vendor positions the model -
+# not by price, and not computed. Empty shelves are legitimate: a vendor that
+# sells no model of a rung has none here, nothing is added to fill a grid.
 #
 # Per model:
 #   id        - OpenRouter model id; must also be in the "Все" list of librechat.yaml
 #   presetId  - stable UUID of the preset in MongoDB; never changes for a slot
-#   label     - short human name shown in brackets in the preset title
+#   label     - short human name shown in the preset title
+#   line      - the word in the id that names the model's line (opus, sonnet,
+#               terra, flash). The monthly check looks for a NEWER model of
+#               the same vendor whose id contains this word - that is the
+#               only kind of candidate it proposes (Opus 5 -> Opus 5.5).
 #   out_per_m - output price in USD per 1M tokens, as OpenRouter reports it;
 #               refreshed by scripts/check_models.py --update-prices, never typed
 #
-# Per vendor:
-#   prefix - the OpenRouter id prefix of the vendor
-#   core   - true for the vendors that are the point of the menu (the others
-#            are cheap extras the review may retire)
-#   ladder - per category, the words in the model id that mark that rung.
-#            Matched against the id after the prefix, longest word first, so
-#            "astra-pro" wins over "astra". A category without a rung word is
-#            one the vendor simply does not sell.
-#
-# Empty shelves are legitimate: a vendor that sells no model of a rung has
-# none here, and nothing is added just to fill a grid. Grok, Kimi and GLM are
-# one strong line each - frontier, not flagship, by the owner's call; a rung
-# the vendor does not sell on OpenRouter (Grok Heavy) is not in the ladder.
-#
-# The order of the vendors here is the order in the chat's preset menu
-# (inside each category); GLM before Kimi by the owner's call, 2026-09-22.
-#
-# Vendors: the four frontier labs, then the Chinese ones. Kimi and GLM stay;
-# other vendors are added only after they proved themselves on the standard
-# test (see CLAUDE.md, "Monthly model review"). Adding a vendor is one block.
+# The order of the vendors here is the order in the chat's preset menu inside
+# each category (Claude, OpenAI, Gemini, Grok, GLM, Kimi, then the extras).
+# Preset = slot: a new version replaces the entry in place, keeps its presetId,
+# and the mother sees the same preset with a new version.
 
 endpoint: "Все"
 
-# Hard cap on presets in the chat, so the menu stays readable. A new model
-# beyond the cap must replace one, not be added next to it.
+# Hard cap on presets in the chat, so the menu stays readable.
 max_models: 20
 
+# The category shows in the menu as its icon only - the word was noise
+# (owner, 2026-09-22). LibreChat itself appends the model id after the
+# title, so the title carries only the label and the price marker.
 categories:
   flagship:  { title: "флагман",   icon: "🧠" }
   frontier:  { title: "передовая", icon: "🔥" }
@@ -68,120 +50,71 @@ colours:
 
 vendors:
   - name: Claude
-    core: true
     prefix: anthropic/
-    ladder:
-      flagship:  [fable]
-      frontier:  [opus]
-      workhorse: [sonnet]
-      cheap:     [haiku]
     flagship:
-      - { id: anthropic/claude-fable-5.1, presetId: b8d5531b-257e-4869-ada5-3c96cfae7b2b, label: "Fable 5.1", out_per_m: 50.0 }
+      - { id: anthropic/claude-fable-5.1, presetId: b8d5531b-257e-4869-ada5-3c96cfae7b2b, label: "Fable 5.1", line: fable,  out_per_m: 50.0 }
     frontier:
-      - { id: anthropic/claude-opus-5.5,  presetId: 794f02de-4ec5-49c2-84af-600994a2a41d, label: "Opus 5.5",  out_per_m: 20.0 }
+      - { id: anthropic/claude-opus-5.5,  presetId: 794f02de-4ec5-49c2-84af-600994a2a41d, label: "Opus 5.5",  line: opus,   out_per_m: 20.0 }
     workhorse:
-      - { id: anthropic/claude-sonnet-5,  presetId: 0f7adf43-3c73-49a4-b6c4-934e9a5e9e12, label: "Sonnet 5",  out_per_m: 10.0 }
+      - { id: anthropic/claude-sonnet-5,  presetId: 0f7adf43-3c73-49a4-b6c4-934e9a5e9e12, label: "Sonnet 5",  line: sonnet, out_per_m: 10.0 }
     cheap: []
 
   - name: OpenAI
-    core: true
     prefix: openai/
-    # astra and astra-pro cost the same and are one rung; the plain Astra is
-    # not offered next to the Pro. -pro is a variant suffix, not a rung.
-    ladder:
-      flagship:  [astra]
-      frontier:  [terra]
-      workhorse: [sol]
-      cheap:     [luna]
     flagship:
-      - { id: openai/gpt-6-astra-pro,   presetId: ff117436-ed01-4691-82a5-3bd77a1bf058, label: "GPT-6 Astra Pro", out_per_m: 50.0 }
+      - { id: openai/gpt-6-astra-pro,   presetId: ff117436-ed01-4691-82a5-3bd77a1bf058, label: "GPT-6 Astra Pro",   line: astra-pro, out_per_m: 50.0 }
     frontier:
-      - { id: openai/gpt-5.6-terra-pro, presetId: 275eb791-c305-416d-a53a-e95fb93b4a0b, label: "GPT-5.6 Terra Pro", out_per_m: 12.0 }
+      - { id: openai/gpt-5.6-terra-pro, presetId: 275eb791-c305-416d-a53a-e95fb93b4a0b, label: "GPT-5.6 Terra Pro", line: terra-pro, out_per_m: 12.0 }
     workhorse:
-      - { id: openai/gpt-5.6-sol-pro,   presetId: c0cc4430-7970-4210-83be-490e24a8b432, label: "GPT-5.6 Sol Pro",   out_per_m: 10.0 }
+      - { id: openai/gpt-5.6-sol-pro,   presetId: c0cc4430-7970-4210-83be-490e24a8b432, label: "GPT-5.6 Sol Pro",   line: sol-pro,   out_per_m: 10.0 }
     cheap:
-      - { id: openai/gpt-6-luna-pro,    presetId: aab73c92-3187-4396-b5bd-ee305dffaa17, label: "GPT-6 Luna Pro",    out_per_m: 0.5 }
+      - { id: openai/gpt-6-luna-pro,    presetId: aab73c92-3187-4396-b5bd-ee305dffaa17, label: "GPT-6 Luna Pro",    line: luna-pro,  out_per_m: 0.5 }
 
   - name: Gemini
-    core: true
     prefix: google/
-    ladder:
-      flagship:  [pro]
-      frontier:  []
-      workhorse: [flash]
-      cheap:     [flash-lite]
     flagship: []
     frontier: []
     workhorse:
-      - { id: google/gemini-3.8-flash, presetId: dcd5732f-6ace-4ad8-b965-97dbb6a13229, label: "Gemini 3.8 Flash", out_per_m: 3.75 }
+      - { id: google/gemini-3.8-flash, presetId: dcd5732f-6ace-4ad8-b965-97dbb6a13229, label: "Gemini 3.8 Flash", line: flash, out_per_m: 3.75 }
     cheap: []
 
   - name: Grok
-    core: true
     prefix: x-ai/
-    ladder:
-      flagship:  []
-      frontier:  [grok]
-      workhorse: []
-      cheap:     [mini]
     flagship: []
     frontier:
-      - { id: x-ai/grok-4.7, presetId: 07dbbec8-c752-480c-b036-2143241c052b, label: "Grok 4.7", out_per_m: 4.8 }
+      - { id: x-ai/grok-4.7, presetId: 07dbbec8-c752-480c-b036-2143241c052b, label: "Grok 4.7", line: grok, out_per_m: 4.8 }
     workhorse: []
     cheap: []
 
   - name: GLM
-    core: true
     prefix: z-ai/
-    ladder:
-      flagship:  []
-      frontier:  [glm]
-      workhorse: []
-      cheap:     [flash, turbo]
     flagship: []
     frontier:
-      - { id: z-ai/glm-5.3, presetId: 89f57356-bc37-4e7f-beea-38f0d821f84b, label: "GLM 5.3", out_per_m: 2.0548 }
+      - { id: z-ai/glm-5.3, presetId: 89f57356-bc37-4e7f-beea-38f0d821f84b, label: "GLM 5.3", line: glm, out_per_m: 2.0548 }
     workhorse: []
     cheap: []
+
   - name: Kimi
-    core: true
     prefix: moonshotai/
-    ladder:
-      flagship:  []
-      frontier:  [kimi]
-      workhorse: []
-      cheap:     []
     flagship: []
     frontier:
-      - { id: moonshotai/kimi-k3, presetId: a576b4c2-7eb7-41a1-8c5a-2a64dba86728, label: "Kimi K3", out_per_m: 15.0 }
+      - { id: moonshotai/kimi-k3, presetId: a576b4c2-7eb7-41a1-8c5a-2a64dba86728, label: "Kimi K3", line: kimi, out_per_m: 15.0 }
     workhorse: []
     cheap: []
 
-
-  # Kept from the presets as they were on 2026-09-22: cheap, used, not core.
-  # The monthly review may retire them.
+  # Cheap extras kept from the presets as they were on 2026-09-22.
   - name: DeepSeek
     prefix: deepseek/
-    ladder:
-      flagship:  []
-      frontier:  []
-      workhorse: []
-      cheap:     [deepseek]
     flagship: []
     frontier: []
     workhorse: []
     cheap:
-      - { id: deepseek/deepseek-v4-pro-0813, presetId: dbeba7cf-f4e0-496b-b9af-cc73aa208534, label: "DeepSeek V4", out_per_m: 1.98 }
+      - { id: deepseek/deepseek-v4-pro-0813, presetId: dbeba7cf-f4e0-496b-b9af-cc73aa208534, label: "DeepSeek V4", line: deepseek-v4, out_per_m: 1.98 }
 
   - name: MiniMax
     prefix: minimax/
-    ladder:
-      flagship:  []
-      frontier:  []
-      workhorse: []
-      cheap:     [minimax]
     flagship: []
     frontier: []
     workhorse: []
     cheap:
-      - { id: minimax/minimax-m3, presetId: 18c842da-c24a-42d4-9aa0-e0651a19d51c, label: "MiniMax M3", out_per_m: 1.2 }
+      - { id: minimax/minimax-m3, presetId: 18c842da-c24a-42d4-9aa0-e0651a19d51c, label: "MiniMax M3", line: minimax-m, out_per_m: 1.2 }

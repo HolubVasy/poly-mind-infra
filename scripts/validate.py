@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Static checks for the LibreChat config and the presets file.
+"""Static checks for the LibreChat config, models/slots.yaml and presets.json.
 
 Runs on every pull request (validate workflow), inside the monthly model
 check, and before apply.sh touches the live server. Exit code 1 means the
@@ -50,9 +50,6 @@ def load_endpoints() -> dict[str, dict]:
             errors.append(f"librechat.yaml: endpoint {name!r} lists a model twice")
         if "fetch" in ep:
             # LibreChat reads models.fetch; a `fetch:` next to `models:` is ignored.
-            # That is why "Все" exposed only its default list on 2026-09-22
-            # despite `fetch: true`. The lists are curated on purpose, so the
-            # key is just noise here - flag it so nobody trusts it again.
             warnings.append(f"librechat.yaml: endpoint {name!r} has endpoint-level fetch, which LibreChat ignores")
         endpoints[name] = ep
     return endpoints
@@ -88,24 +85,8 @@ def check_presets(endpoints: dict[str, dict]) -> None:
             )
 
 
-def rung_of(short_id: str, ladder: dict[str, list[str]]) -> str | None:
-    """The category whose rung word is in the id; the longest word wins, so
-    "astra-pro" beats "astra". None when no rung matches."""
-    best = None
-    for category, words in ladder.items():
-        for w in words or []:
-            if w in short_id and (best is None or len(w) > len(best[1])):
-                best = (category, w)
-    return best[0] if best else None
-
-
 def check_slots(endpoints: dict[str, dict]) -> None:
-    """models/slots.yaml is where models are chosen; presets.json is generated from it.
-
-    Same presetIds, same model per presetId, every slot model present in the
-    endpoint list, the cap - and, at the end, the generated file must match
-    byte for byte, so nobody edits presets.json or types a price marker.
-    """
+    """models/slots.yaml is where models are chosen; presets.json is generated from it."""
     slots = yaml.safe_load(SLOTS_PATH.read_text(encoding="utf-8"))
     endpoint = slots.get("endpoint")
     ep = endpoints.get(endpoint)
@@ -116,52 +97,34 @@ def check_slots(endpoints: dict[str, dict]) -> None:
     categories = list(slots.get("categories") or {})
     if not categories:
         errors.append("slots.yaml: no categories")
-    by_id: dict[str, str] = {}
+    seen: set[str] = set()
     for vendor in slots.get("vendors") or []:
         name = vendor.get("name") or "?"
         prefix = vendor.get("prefix") or ""
-        ladder = vendor.get("ladder") or {}
-        if not ladder:
-            errors.append(f"slots.yaml vendor {name!r}: no ladder - categories are positions in the vendor's line-up, write its rung words")
-        for cat in ladder:
-            if cat not in categories:
-                errors.append(f"slots.yaml vendor {name!r}: ladder has unknown category {cat!r}")
         if len(vendor.get("flagship") or []) > 1:
-            errors.append(f"slots.yaml vendor {name!r}: {len(vendor['flagship'])} flagships - the flagship is ONE model, the one the vendor positions as its best")
+            errors.append(f"slots.yaml vendor {name!r}: {len(vendor['flagship'])} flagships - the flagship is ONE model")
+        for key in vendor:
+            if key not in ("name", "prefix", *categories):
+                errors.append(f"slots.yaml vendor {name!r}: unknown key {key!r} (categories are {categories})")
         for cat in categories:
             for m in vendor.get(cat) or []:
                 where = f"slots.yaml {name}/{cat} {m.get('id')!r}"
-                for field in ("id", "presetId", "label", "out_per_m"):
+                for field in ("id", "presetId", "label", "line", "out_per_m"):
                     if m.get(field) in (None, ""):
                         errors.append(f"{where}: missing {field}")
-                if m.get("presetId") in by_id:
+                if m.get("presetId") in seen:
                     errors.append(f"{where}: presetId {m.get('presetId')} used twice")
-                by_id[m.get("presetId")] = m.get("id")
-                if m.get("id") not in listed:
-                    errors.append(f"{where}: not in the models.default list of {endpoint!r}")
+                seen.add(m.get("presetId"))
                 mid = str(m.get("id") or "")
+                if mid not in listed:
+                    errors.append(f"{where}: not in the models.default list of {endpoint!r}")
                 if not mid.startswith(prefix):
                     errors.append(f"{where}: id does not start with the vendor prefix {prefix!r}")
-                rung = rung_of(mid[len(prefix):], ladder)
-                if rung is None:
-                    errors.append(f"{where}: no rung of the {name} ladder matches this id - add its word to the ladder or drop the model")
-                elif rung != cat:
-                    errors.append(f"{where}: its name says rung {rung!r}, it is filed under {cat!r} - the category is the position in the line-up")
-        for key in vendor:
-            if key not in ("name", "prefix", "core", "ladder", *categories):
-                errors.append(f"slots.yaml vendor {name!r}: unknown key {key!r} (categories are {categories})")
+                if m.get("line") and str(m["line"]) not in mid:
+                    errors.append(f"{where}: line {m['line']!r} is not a part of the id")
     cap = int(slots.get("max_models") or 0)
-    if cap and len(by_id) > cap:
-        errors.append(f"slots.yaml: {len(by_id)} models, the cap is max_models: {cap} - replace, do not add")
-    presets = json.loads(PRESETS_PATH.read_text(encoding="utf-8")).get("presets") or []
-    file_ids = {p.get("presetId"): p.get("model") for p in presets}
-    for pid in set(by_id) - set(file_ids):
-        errors.append(f"slots.yaml presetId {pid} ({by_id[pid]}) has no preset in presets.json")
-    for pid in set(file_ids) - set(by_id):
-        errors.append(f"presets.json presetId {pid} ({file_ids[pid]}) is not in slots.yaml")
-    for pid in set(by_id) & set(file_ids):
-        if by_id[pid] != file_ids[pid]:
-            errors.append(f"presetId {pid}: slots.yaml says {by_id[pid]!r}, presets.json says {file_ids[pid]!r}")
+    if cap and len(seen) > cap:
+        errors.append(f"slots.yaml: {len(seen)} models, the cap is max_models: {cap} - replace, do not add")
     import build_presets
     if build_presets.render(build_presets.build(slots)) != PRESETS_PATH.read_text(encoding="utf-8"):
         errors.append("presets.json is not what slots.yaml generates - edit slots.yaml, run scripts/build_presets.py")

@@ -27,15 +27,12 @@ do not type them. Presets made in the chat UI are removed by the next deploy.
 
 ## Models are checked every month
 
-On the 1st, `Model check` compares every slot in `models/slots.yaml` with
-OpenRouter, tests each newer candidate against the current model on a standard
-Russian editing task (a judge model decides; losers are logged in
-`docs/model-log.md`), and opens one pull request with a before -> after table.
-A Telegram message brings the link. Your part: read the table, merge.
-
-A model that disappeared is replaced by its successor, merged and deployed
-automatically - a preset with a vanished model is already broken. Price
-markers alone also merge on their own.
+On the 1st, `Model check` looks for a newer version of each model's line in
+OpenRouter, tests it against the current model on a standard Russian editing
+task (a judge model decides; every verdict is in `docs/model-log.md`), and
+opens one pull request with a before -> after table. A Telegram message brings
+the link and one line per change. Your part: read, merge. Nothing merges on
+its own.
 
 Run it any time: Actions -> Model check -> Run workflow.
 
