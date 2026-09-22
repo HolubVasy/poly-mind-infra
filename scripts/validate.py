@@ -89,11 +89,11 @@ def check_presets(endpoints: dict[str, dict]) -> None:
 
 
 def check_slots(endpoints: dict[str, dict]) -> None:
-    """models/slots.yaml is where models are chosen; presets.json must mirror it.
+    """models/slots.yaml is where models are chosen; presets.json is generated from it.
 
-    Loose check for now: same presetIds, same model per presetId, and every
-    slot model present in the endpoint list. Titles are still free-form until
-    presets.json is generated from slots.yaml (scripts/build_presets.py).
+    Same presetIds, same model per presetId, every slot model present in the
+    endpoint list, the cap - and, at the end, the generated file must match
+    byte for byte, so nobody edits presets.json or types a price marker.
     """
     slots = yaml.safe_load(SLOTS_PATH.read_text(encoding="utf-8"))
     endpoint = slots.get("endpoint")
@@ -134,6 +134,9 @@ def check_slots(endpoints: dict[str, dict]) -> None:
     for pid in set(by_id) & set(file_ids):
         if by_id[pid] != file_ids[pid]:
             errors.append(f"presetId {pid}: slots.yaml says {by_id[pid]!r}, presets.json says {file_ids[pid]!r}")
+    import build_presets
+    if build_presets.render(build_presets.build(slots)) != PRESETS_PATH.read_text(encoding="utf-8"):
+        errors.append("presets.json is not what slots.yaml generates - edit slots.yaml, run scripts/build_presets.py")
 
 
 def main() -> int:
