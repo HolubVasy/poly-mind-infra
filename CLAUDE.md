@@ -93,7 +93,8 @@ with a new version in brackets.
 block carries a `ladder`: per category, the words in the model id that mark
 that rung (Claude: fable > opus > sonnet > haiku; OpenAI: astra-pro > astra >
 sol, terra > luna; Gemini: pro > flash > flash-lite - Gemini has no frontier,
-Kimi and GLM have only a frontier, by the owner's decision). `validate.py` refuses a model filed on a rung its
+Grok, Kimi and GLM have only a frontier, by the owner's decision; a rung not
+sold on OpenRouter, like Grok Heavy, is not in the ladder). `validate.py` refuses a model filed on a rung its
 name does not say, and a second flagship. A new version of a rung inherits the
 category; a new NAME the ladder does not know is reported by the monthly check
 ("новые имена, которых нет в лестнице") and placed by the owner, never
@@ -198,7 +199,7 @@ This is the baseline every later month is a diff against; the ladders in
 | Claude | Fable 5.1 | Opus 5.5 | Sonnet 5 | - |
 | OpenAI | GPT-6 Astra Pro | GPT-6 Astra | GPT-5.6 Terra Pro, Sol Pro | GPT-6 Luna Pro |
 | Gemini | - | - | Gemini 3.8 Flash | - |
-| Grok | Grok 4.7 | - | - | - |
+| Grok | - | Grok 4.7 | - | - |
 | Kimi | - | Kimi K3 | - | - |
 | GLM | - | GLM 5.3 | - | - |
 | DeepSeek (extra) | - | - | - | DeepSeek V4 |
@@ -217,7 +218,7 @@ Rules that bind whoever edits `slots.yaml`, human or Claude:
   comes with its ladder. A vendor block may hold an empty category.
 - Empty shelves are legitimate and are NOT filled to complete the grid: a
   vendor that sells no model of a rung has none here (Gemini has no
-  frontier; Kimi and GLM are one strong line each, frontier). A shelf is
+  frontier; Grok, Kimi and GLM are one strong line each, frontier). A shelf is
   filled only when the owner decides, and then through the quality gate.
 - At most `max_models` presets in total. Beyond the cap a model replaces one,
   it is not added next to it.

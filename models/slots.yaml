@@ -36,8 +36,9 @@
 #            one the vendor simply does not sell.
 #
 # Empty shelves are legitimate: a vendor that sells no model of a rung has
-# none here, and nothing is added just to fill a grid. Kimi and GLM are one
-# strong line each - frontier, not flagship, by the owner's call.
+# none here, and nothing is added just to fill a grid. Grok, Kimi and GLM are
+# one strong line each - frontier, not flagship, by the owner's call; a rung
+# the vendor does not sell on OpenRouter (Grok Heavy) is not in the ladder.
 #
 # Vendors: the four frontier labs, then the Chinese ones. Kimi and GLM stay;
 # other vendors are added only after they proved themselves on the standard
@@ -115,13 +116,13 @@ vendors:
     core: true
     prefix: x-ai/
     ladder:
-      flagship:  [grok]
-      frontier:  []
+      flagship:  []
+      frontier:  [grok]
       workhorse: []
       cheap:     [mini]
-    flagship:
+    flagship: []
+    frontier:
       - { id: x-ai/grok-4.7, presetId: 07dbbec8-c752-480c-b036-2143241c052b, label: "Grok 4.7", out_per_m: 4.8 }
-    frontier: []
     workhorse: []
     cheap: []
 
