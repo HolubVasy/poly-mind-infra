@@ -40,6 +40,9 @@
 # one strong line each - frontier, not flagship, by the owner's call; a rung
 # the vendor does not sell on OpenRouter (Grok Heavy) is not in the ladder.
 #
+# The order of the vendors here is the order in the chat's preset menu
+# (inside each category); GLM before Kimi by the owner's call, 2026-09-22.
+#
 # Vendors: the four frontier labs, then the Chinese ones. Kimi and GLM stay;
 # other vendors are added only after they proved themselves on the standard
 # test (see CLAUDE.md, "Monthly model review"). Adding a vendor is one block.
@@ -127,6 +130,19 @@ vendors:
     workhorse: []
     cheap: []
 
+  - name: GLM
+    core: true
+    prefix: z-ai/
+    ladder:
+      flagship:  []
+      frontier:  [glm]
+      workhorse: []
+      cheap:     [flash, turbo]
+    flagship: []
+    frontier:
+      - { id: z-ai/glm-5.3, presetId: 89f57356-bc37-4e7f-beea-38f0d821f84b, label: "GLM 5.3", out_per_m: 2.0548 }
+    workhorse: []
+    cheap: []
   - name: Kimi
     core: true
     prefix: moonshotai/
@@ -141,19 +157,6 @@ vendors:
     workhorse: []
     cheap: []
 
-  - name: GLM
-    core: true
-    prefix: z-ai/
-    ladder:
-      flagship:  []
-      frontier:  [glm]
-      workhorse: []
-      cheap:     [flash, turbo]
-    flagship: []
-    frontier:
-      - { id: z-ai/glm-5.3, presetId: 89f57356-bc37-4e7f-beea-38f0d821f84b, label: "GLM 5.3", out_per_m: 2.0548 }
-    workhorse: []
-    cheap: []
 
   # Kept from the presets as they were on 2026-09-22: cheap, used, not core.
   # The monthly review may retire them.

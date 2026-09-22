@@ -5,6 +5,9 @@
 //
 // Presets are matched by presetId, so renaming a preset (for example when its
 // price marker changes) updates it in place instead of creating a duplicate.
+// `order` is what LibreChat sorts the preset menu by (api/models/Preset.js:
+// ascending order, missing = 10000, then newest first); build_presets.py
+// assigns it, so the menu order is decided in slots.yaml, not by Mongo.
 // Presets in the database that are not in the file are deleted - the file is
 // the whole truth. Before any write the current presets are copied to the
 // collection presets_backup_<BACKUP_TAG>.
@@ -23,7 +26,7 @@ if (!admin) {
 }
 const owner = String(admin._id);
 
-const FIELDS = ["title", "endpoint", "endpointType", "model", "maxContextTokens", "resendFiles", "web_search", "tags", "isArchived"];
+const FIELDS = ["title", "endpoint", "endpointType", "model", "maxContextTokens", "resendFiles", "web_search", "tags", "isArchived", "order"];
 const current = db.presets.find({ user: owner }).toArray();
 const byId = Object.fromEntries(current.map((p) => [p.presetId, p]));
 const wantedIds = new Set(wanted.map((p) => p.presetId));
