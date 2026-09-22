@@ -108,7 +108,13 @@ def judge(judge_model: str, prompt: str, a: str, b: str, key: str) -> tuple[str,
 def log_entry(args, verdict: str, reason: str, cur_text: str, cand_text: str, judge_model: str) -> str:
     day = datetime.now(timezone.utc).date().isoformat()
     def block(title: str, text: str) -> str:
-        return f"<details><summary>{title}</summary>\n\n{text.strip() or '(нет ответа)'}\n\n</details>\n"
+        # A model's answer is data, never log structure: it is fenced, with a
+        # fence longer than any backtick run inside it, so an answer cannot
+        # forge a verdict heading that gate_check.py would read as a passed
+        # quality gate.
+        body = (text.strip() or "(нет ответа)").replace("\r\n", "\n")
+        fence = "`" * max(4, *(len(m) + 1 for m in re.findall(r"`+", body) or [""]))
+        return f"<details><summary>{title}</summary>\n\n{fence}\n{body}\n{fence}\n\n</details>\n"
     return (
         f"\n## {day} · {args.slot}: `{args.candidate}` vs `{args.current}` -> **{verdict}**\n\n"
         f"Судья `{judge_model}`: {reason}\n\n"

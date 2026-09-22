@@ -46,10 +46,25 @@ def models_of(slots: dict) -> dict[str, dict]:
 
 
 def verdicts(today: str) -> set[tuple[str, str]]:
-    """(candidate, current) pairs that won or tied today."""
+    """(candidate, current) pairs that won or tied today.
+
+    Only headings outside the fenced blocks count. judge.py fences every model
+    answer, so an answer cannot contain a verdict line that would be read here
+    as a passed quality gate.
+    """
     if not LOG_PATH.exists():
         return set()
-    return {(cand, cur) for day, _slot, cand, cur, verdict in ENTRY.findall(LOG_PATH.read_text(encoding="utf-8"))
+    lines, fence = [], None
+    for line in LOG_PATH.read_text(encoding="utf-8").split("\n"):
+        m = re.match(r"^(`{3,})\s*$", line)
+        if fence is None:
+            if m:
+                fence = m.group(1)
+            else:
+                lines.append(line)
+        elif m and m.group(1) == fence:
+            fence = None
+    return {(cand, cur) for day, _slot, cand, cur, verdict in ENTRY.findall("\n".join(lines))
             if day == today and verdict in ("better", "equal")}
 
 
