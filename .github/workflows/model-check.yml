@@ -182,11 +182,17 @@ jobs:
           if [ -z "$TELEGRAM_BOT_TOKEN" ] || [ -z "$TELEGRAM_CHAT_ID" ]; then
             echo "Telegram secrets not set - nothing sent." >> "$GITHUB_STEP_SUMMARY"; exit 0
           fi
+          # gate_check.py leaves one ready Russian line per change in .digest
+          # (what was replaced, why, and what it costs now).
+          digest=""
+          if [ -s /tmp/gate.json ]; then
+            digest=$(jq -r '.digest[]? | "• " + .' /tmp/gate.json)
+          fi
           case "$OUTCOME:$JOB_STATUS" in
-            open:*)    text="🗳 Модели чата: PR #$PR_NUMBER ждёт тебя. Открой, глянь таблицу «было → стало», смёржи. $PR_URL" ;;
-            merged:*)  text="✅ Модели чата: PR #$PR_NUMBER (пропавшие модели / цены) смёржен и выкачен сам. $PR_URL" ;;
+            open:*)    text=$(printf '🗳 Модели чата: PR #%s ждёт тебя.\n%s\n\nПочему так решено и ответы моделей - в PR: %s' "$PR_NUMBER" "$digest" "$PR_URL") ;;
+            merged:*)  text=$(printf '✅ Модели чата: PR #%s смёржен и выкачен сам.\n%s\n\n%s' "$PR_NUMBER" "$digest" "$PR_URL") ;;
             none:success) echo "No PR, nothing to say." >> "$GITHUB_STEP_SUMMARY"; exit 0 ;;
-            *)         text="⚠️ Модели чата: проверка упала (${OUTCOME:-нет PR}). $RUN_URL" ;;
+            *)         text=$(printf '⚠️ Модели чата: проверка упала (%s). %s' "${OUTCOME:-нет PR}" "$RUN_URL") ;;
           esac
           curl -sS -o /dev/null -w "telegram: %{http_code}\n" \
             --data-urlencode "chat_id=$TELEGRAM_CHAT_ID" \
