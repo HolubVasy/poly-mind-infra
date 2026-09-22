@@ -91,8 +91,8 @@ with a new version in brackets.
 
 **A category is a position in the vendor's line-up, not a price.** Each vendor
 block carries a `ladder`: per category, the words in the model id that mark
-that rung (Claude: fable > opus > sonnet > haiku; OpenAI: astra-pro > astra >
-sol, terra > luna; Gemini: pro > flash > flash-lite - Gemini has no frontier,
+that rung (Claude: fable > opus > sonnet > haiku; OpenAI: astra > terra >
+sol > luna, `-pro` being a variant suffix, not a rung; Gemini: pro > flash > flash-lite - Gemini has no frontier,
 Grok, Kimi and GLM have only a frontier, by the owner's decision; a rung not
 sold on OpenRouter, like Grok Heavy, is not in the ladder). `validate.py` refuses a model filed on a rung its
 name does not say, and a second flagship. A new version of a rung inherits the
@@ -197,7 +197,7 @@ This is the baseline every later month is a diff against; the ladders in
 | | flagship | frontier | workhorse | cheap |
 |---|---|---|---|---|
 | Claude | Fable 5.1 | Opus 5.5 | Sonnet 5 | - |
-| OpenAI | GPT-6 Astra Pro | GPT-6 Astra | GPT-5.6 Terra Pro, Sol Pro | GPT-6 Luna Pro |
+| OpenAI | GPT-6 Astra Pro | GPT-5.6 Terra Pro | GPT-5.6 Sol Pro | GPT-6 Luna Pro |
 | Gemini | - | - | Gemini 3.8 Flash | - |
 | Grok | - | Grok 4.7 | - | - |
 | Kimi | - | Kimi K3 | - | - |

@@ -53,23 +53,11 @@
       "endpointType": "custom",
       "isArchived": false,
       "maxContextTokens": 900000,
-      "model": "openai/gpt-6-astra",
-      "presetId": "705e685d-16cc-42a5-8384-6c28043e446b",
-      "resendFiles": true,
-      "tags": [],
-      "title": "🔴 x20 | 🔥 OpenAI · передовая (GPT-6 Astra)",
-      "web_search": false
-    },
-    {
-      "endpoint": "Все",
-      "endpointType": "custom",
-      "isArchived": false,
-      "maxContextTokens": 900000,
       "model": "openai/gpt-5.6-terra-pro",
       "presetId": "275eb791-c305-416d-a53a-e95fb93b4a0b",
       "resendFiles": true,
       "tags": [],
-      "title": "🟢 x5 | ⚙️ OpenAI · рабочая (GPT-5.6 Terra Pro)",
+      "title": "🟢 x5 | 🔥 OpenAI · передовая (GPT-5.6 Terra Pro)",
       "web_search": false
     },
     {
