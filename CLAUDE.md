@@ -121,6 +121,13 @@ Reconstructed from the presets as of 2026-09-22 (the owner may correct it):
 - Icon: `⚡` fast and cheap, `🔥` strong non-flagship, `🧠` flagship reasoning.
 - If the price did not change, keep the existing marker as it is.
 
+## Notifications
+
+`PR reminder` (daily 19:00 UTC) sends the list of open, non-draft pull requests
+to the owner's Telegram with plain curl, and stays silent when there are none.
+Secrets `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID` - the same bot his Claude
+briefing routines use. No Claude runs in it.
+
 ## Server facts
 
 - Host `145.63.130.166`, Zomro "Optimal AMD", Germany, Ubuntu 22.04. The box
@@ -157,7 +164,8 @@ Lessons already paid for - do not repeat:
 - root's authorized_keys: the deploy key with
   `command="/usr/local/sbin/poly-mind-apply",restrict`.
 - Repo secrets: `DEPLOY_SSH_KEY` (private half of that key),
-  `CLAUDE_CODE_OAUTH_TOKEN` (owner's Claude subscription, `claude setup-token`).
+  `CLAUDE_CODE_OAUTH_TOKEN` (owner's Claude subscription, `claude setup-token`),
+  `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID` (PR reminder).
 - Actions may create pull requests (repo setting).
 
 ## Conventions

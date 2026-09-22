@@ -1,0 +1,50 @@
+# Evening nudge in Telegram about pull requests waiting for the owner.
+# Plain curl to the Telegram Bot API - no Claude, no server involved.
+# Silent when nothing is open.
+#
+# Secrets: TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID (the same bot the briefings use).
+name: PR reminder
+
+on:
+  schedule:
+    # 19:00 UTC = 21:00 Warsaw in summer, 20:00 in winter. GitHub may start
+    # scheduled runs some minutes late.
+    - cron: "0 19 * * *"
+  workflow_dispatch:
+
+permissions:
+  pull-requests: read
+
+jobs:
+  remind:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send the list of open pull requests
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          if [ -z "$TELEGRAM_BOT_TOKEN" ] || [ -z "$TELEGRAM_CHAT_ID" ]; then
+            echo "::error::TELEGRAM_BOT_TOKEN / TELEGRAM_CHAT_ID secrets are not set"
+            exit 1
+          fi
+          prs=$(gh pr list -R "$REPO" --state open --json number,title,url,isDraft \
+            --jq '[.[] | select(.isDraft | not)]')
+          count=$(echo "$prs" | jq length)
+          if [ "$count" = 0 ]; then
+            echo "No open pull requests - nothing to send."
+            exit 0
+          fi
+          # Titles are escaped for Telegram HTML (&, <, >).
+          lines=$(echo "$prs" | jq -r '.[] | "• <a href=\"\(.url)\">#\(.number)</a> \(.title | gsub("&";"&amp;") | gsub("<";"&lt;") | gsub(">";"&gt;"))"')
+          text=$(printf '<b>🔧 Чат мамы: %s PR ждут мёржа</b>\n%s\n\nМёржить, когда мама не в чате: изменение librechat.yaml перезапускает чат примерно на 10 секунд.' "$count" "$lines")
+          resp=$(curl -s "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+            --data-urlencode "chat_id=${TELEGRAM_CHAT_ID}" \
+            --data-urlencode "parse_mode=HTML" \
+            --data-urlencode "disable_web_page_preview=true" \
+            --data-urlencode "text=${text}")
+          echo "$resp" | jq -e '.ok == true' >/dev/null || { echo "::error::Telegram said: $resp"; exit 1; }
+          echo "Sent reminder about $count pull request(s)."

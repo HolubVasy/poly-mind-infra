@@ -33,6 +33,11 @@ On the 1st, `Model check` compares all models with OpenRouter:
 
 Run it any time: Actions -> Model check -> Run workflow.
 
+## Reminders
+
+Every evening at 21:00 (Warsaw, summer time) Telegram gets the list of pull
+requests still waiting for you. Nothing open - no message.
+
 ## If something goes wrong
 
 - The chat is down after a deploy that did not roll back: Actions -> Deploy ->
