@@ -39,6 +39,7 @@ Not in this repository, on purpose:
 | `scripts/remote-entry.sh` | `/usr/local/sbin/poly-mind-apply` | The only command the deploy key may run |
 | `scripts/build_presets.py` | - | Generates `presets.json` from `slots.yaml` |
 | `scripts/check_models.py` | - | Facts for the monthly model review |
+| `scripts/judge.py` | - | Quality gate: candidate vs current on `tests/standard_prompt.md`, verdict to `docs/model-log.md` |
 
 ## How a change reaches the server
 
@@ -128,7 +129,11 @@ What the review does, in order:
    reasoning is on record. Equal or better -> it goes into the pull request.
    No answer, or not in Russian -> not in the pull request. A vanished model
    has no current answer to compare with: its successor goes in without the
-   gate.
+   gate. Run by hand: `OPENROUTER_API_KEY=... python scripts/judge.py --slot
+   "Claude/frontier" --current <id> --candidate <id> --judge <flagship id>`;
+   it prints one JSON line with `verdict` better / equal / worse / failed.
+   First check on 2026-09-22 (Opus 5 vs Sonnet 5, judge Fable 5.1): about
+   50 s and a few cents per pair.
 4. Prices in `slots.yaml` are refreshed from the catalogue
    (`check_models.py --update-prices`), `build_presets.py` regenerates the
    titles.
