@@ -34,7 +34,8 @@ Russian editing task (a judge model decides; losers are logged in
 A Telegram message brings the link. Your part: read the table, merge.
 
 A model that disappeared is replaced by its successor, merged and deployed
-automatically - a preset with a vanished model is already broken.
+automatically - a preset with a vanished model is already broken. Price
+markers alone also merge on their own.
 
 Run it any time: Actions -> Model check -> Run workflow.
 

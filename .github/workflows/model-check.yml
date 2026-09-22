@@ -1,18 +1,34 @@
-# Monthly review of the models behind the presets and endpoint lists.
+# Monthly review of the models behind the presets (rules: CLAUDE.md, "Monthly
+# model review"). The owner's part is one Telegram message a month: open the
+# pull request, read the before -> after table, merge.
 #
-# 1. scripts/check_models.py collects facts from the OpenRouter catalogue.
-# 2. Claude applies the rules in CLAUDE.md ("Monthly model review") and, if
-#    anything should change, opens ONE pull request with a before -> after table.
-# 3. If that pull request only replaces models that disappeared from
-#    OpenRouter (label dead-models-only), it is merged and deployed right away:
-#    such a preset is already broken - it silently answers with another model.
-#    Everything else waits for the owner's merge.
+# 1. scripts/check_models.py compares models/slots.yaml with OpenRouter and
+#    refreshes the prices in slots.yaml; build_presets.py regenerates titles.
+# 2. Claude picks, per slot, the newest model of the same line and runs
+#    scripts/judge.py on every candidate (standard prompt, judge model, verdict
+#    to docs/model-log.md). Winners and successors of vanished models go into
+#    slots.yaml; then ONE pull request with a before -> after table.
+# 3. scripts/gate_check.py verifies the branch: every replaced model either
+#    vanished from OpenRouter or won its verdict today. A branch that fails
+#    the gate is closed, not merged.
+# 4. Only vanished-model replacements and price markers merge and deploy on
+#    their own (label auto-merge). Everything else waits for the owner.
+# 5. A plain curl sends the Telegram message. Silent when there is no PR.
+#
+# dry_run (manual): steps 1 and the diff only; no Claude, no PR, no message.
+# Pull requests opened with GITHUB_TOKEN do not trigger the Validate workflow,
+# so validate.py and gate_check.py run here, before the PR is opened.
 name: Model check
 
 on:
   schedule:
     - cron: "0 6 1 * *"
   workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Only report and show the price diff; no Claude, no PR, no Telegram"
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -31,6 +47,8 @@ jobs:
     env:
       BRANCH: model-check-${{ github.run_id }}
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      REPORT_MD: /tmp/model-report.md
+      REPORT_JSON: /tmp/model-report.json
     steps:
       - uses: actions/checkout@v4
         with:
@@ -40,55 +58,138 @@ jobs:
           python-version: "3.12"
       - run: pip install -q pyyaml
 
-      - name: Collect facts from OpenRouter
+      - name: Facts from OpenRouter, prices into slots.yaml
         run: |
-          python scripts/check_models.py --json /tmp/model-report.json > /tmp/model-report.md
-          cat /tmp/model-report.md >> "$GITHUB_STEP_SUMMARY"
+          python scripts/check_models.py --json "$REPORT_JSON" --update-prices > "$REPORT_MD"
+          python scripts/build_presets.py
+          python scripts/validate.py
+          cat "$REPORT_MD" >> "$GITHUB_STEP_SUMMARY"
+          echo '## Price diff' >> "$GITHUB_STEP_SUMMARY"
+          echo '```diff' >> "$GITHUB_STEP_SUMMARY"
+          git diff -- models/slots.yaml presets/presets.json >> "$GITHUB_STEP_SUMMARY" || true
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Dry run stops here
+        if: ${{ inputs.dry_run }}
+        run: echo "dry run - no Claude, no pull request, no Telegram" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Label for the auto-merge path
-        run: gh label create dead-models-only --color B60205 --description "Only replaces models that vanished from OpenRouter" --force
+        if: ${{ !inputs.dry_run }}
+        run: gh label create auto-merge --color B60205 --description "Only vanished-model replacements and price markers; merged by the workflow" --force
 
-      - name: Claude reviews the models
+      - name: Claude reviews the slots
+        if: ${{ !inputs.dry_run }}
         uses: anthropics/claude-code-action@v1
+        env:
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
           show_full_output: true
           prompt: |
             You are running the monthly model review of this repository.
-            Read CLAUDE.md first, especially the section "Monthly model review" -
-            its rules are binding. The facts gathered a minute ago are in
-            /tmp/model-report.md and /tmp/model-report.json.
+            Read CLAUDE.md first, especially "Monthly model review" and
+            "Presets" - their rules are binding. The facts gathered a minute
+            ago are in ${{ env.REPORT_MD }} (Markdown) and ${{ env.REPORT_JSON }}
+            (JSON). The working tree may already contain refreshed prices in
+            models/slots.yaml and presets/presets.json - keep them.
 
-            If nothing needs to change, make no commit and no pull request; just
-            say so.
+            Do this, in order:
+            1. For every slot in models/slots.yaml decide whether a newer model
+               of the SAME vendor, SAME line and SAME category exists in the
+               report's candidates (Sonnet 5 -> Sonnet 5.1, GPT-5.2 -> GPT-5.6;
+               never Flash for Pro, never a :batch, :free or preview variant
+               when the plain id exists). Also fill an EMPTY category of a
+               vendor if the vendor has an obvious model for it (Claude
+               workhorse = Haiku, Gemini flagship = Gemini Pro, Grok flagship,
+               Grok workhorse = mini). Stay within max_models.
+            2. For every such candidate run the quality gate:
+               python scripts/judge.py --slot "<Vendor>/<category>" --current <old id> --candidate <new id> --judge <id of the Claude flagship slot>
+               (for an empty category use the vendor's frontier model as
+               --current, or the Claude frontier if the vendor has none).
+               Read the JSON verdict it prints. better / equal -> the candidate
+               goes in. worse / failed -> it does not; the log already has
+               the reason. Do not edit docs/model-log.md by hand.
+            3. A model listed under "Missing models" is replaced by its direct
+               successor (same vendor, category and line) without a verdict.
+            4. Apply the accepted changes to models/slots.yaml: same presetId,
+               new id, new label, out_per_m from the report. Add every new id
+               to the "Все" list in librechat/librechat.yaml; remove a replaced
+               id from that list unless another slot or another endpoint still
+               uses it. Keep the first model of the list unchanged.
+            5. Run, and fix until all pass:
+               python scripts/build_presets.py
+               python scripts/validate.py
+               python scripts/gate_check.py --base origin/main --report ${{ env.REPORT_JSON }}
+            6. If `git status --porcelain` is empty: make no commit, no branch,
+               no pull request, and end with the single line NO CHANGES.
+            7. Otherwise: git checkout -b "${{ env.BRANCH }}", commit everything
+               (including docs/model-log.md) with a short message, push, and
+               open ONE pull request against main with `gh pr create`. The
+               body must have a before -> after table (slot, old model, new
+               model, old price, new price, why - with the judge's reason or
+               "vanished from OpenRouter" or "price"), the list of missing
+               models, and the list of candidates that lost with one line each.
+               If gate_check.py printed "auto-merge: yes", add the label
+               auto-merge with `gh pr edit --add-label auto-merge`.
+          claude_args: '--allowed-tools "Read,Edit,Write,Glob,Grep,Bash(git:*),Bash(python scripts/*),Bash(gh pr create:*),Bash(gh pr edit:*),Bash(gh pr view:*),Bash(gh label list:*)"'
 
-            Otherwise, on a new branch named exactly "${{ env.BRANCH }}":
-            edit presets/presets.json and/or librechat/librechat.yaml,
-            run `python scripts/validate.py` until it passes, commit with a short
-            message, push, and open ONE pull request against main with
-            `gh pr create`. The body must contain a before -> after table
-            (preset or list, old model, new model, old price, new price, why) and
-            the list of models that disappeared from OpenRouter.
-            Add the label dead-models-only (`gh pr edit --add-label`) ONLY if
-            every change replaces a model missing from OpenRouter with its direct
-            successor from the same family - no other edits at all.
-          claude_args: '--allowed-tools "Read,Edit,Write,Glob,Grep,Bash(git:*),Bash(python scripts/validate.py),Bash(gh pr create:*),Bash(gh pr edit:*),Bash(gh pr view:*)"'
-
-      - name: Merge and deploy dead-model fixes
+      - name: Gate the pull request, merge the safe ones
+        id: pr
+        if: ${{ !inputs.dry_run }}
         run: |
-          pr=$(gh pr list --head "$BRANCH" --state open --json number,labels --jq '.[0] // empty')
+          pr=$(gh pr list --head "$BRANCH" --state open --json number,url,title --jq '.[0] // empty')
           if [ -z "$pr" ]; then
+            echo "outcome=none" >> "$GITHUB_OUTPUT"
             echo "No pull request this month." >> "$GITHUB_STEP_SUMMARY"
             exit 0
           fi
           number=$(echo "$pr" | jq -r .number)
-          if echo "$pr" | jq -e '.labels | map(.name) | index("dead-models-only")' >/dev/null; then
+          url=$(echo "$pr" | jq -r .url)
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+          echo "number=$number" >> "$GITHUB_OUTPUT"
+          git fetch -q origin "$BRANCH"
+          git checkout -q "origin/$BRANCH"
+          if ! python scripts/validate.py || ! python scripts/gate_check.py --base origin/main --report "$REPORT_JSON" --json /tmp/gate.json; then
+            gh pr close "$number" --comment "Closed by the Model check workflow: validate.py or gate_check.py failed on this branch (see the run). Nothing was merged."
+            echo "outcome=closed" >> "$GITHUB_OUTPUT"
+            echo "PR #$number failed the gate and was closed." >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
+          if jq -e '.auto_merge' /tmp/gate.json >/dev/null && gh pr view "$number" --json labels --jq '.labels[].name' | grep -qx auto-merge; then
             gh pr merge "$number" --squash --delete-branch
             # A merge made with GITHUB_TOKEN does not trigger other workflows,
             # so start the deploy explicitly.
             gh workflow run deploy.yml --ref main
-            echo "PR #$number only replaced vanished models: merged and deployed." >> "$GITHUB_STEP_SUMMARY"
+            echo "outcome=merged" >> "$GITHUB_OUTPUT"
+            echo "PR #$number only replaced vanished models / price markers: merged and deployed." >> "$GITHUB_STEP_SUMMARY"
           else
-            echo "PR #$number waits for the owner's review." >> "$GITHUB_STEP_SUMMARY"
+            echo "outcome=open" >> "$GITHUB_OUTPUT"
+            echo "PR #$number waits for the owner: $url" >> "$GITHUB_STEP_SUMMARY"
           fi
+
+      - name: Telegram
+        if: ${{ always() && !inputs.dry_run }}
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          OUTCOME: ${{ steps.pr.outputs.outcome }}
+          PR_URL: ${{ steps.pr.outputs.url }}
+          PR_NUMBER: ${{ steps.pr.outputs.number }}
+          JOB_STATUS: ${{ job.status }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          if [ -z "$TELEGRAM_BOT_TOKEN" ] || [ -z "$TELEGRAM_CHAT_ID" ]; then
+            echo "Telegram secrets not set - nothing sent." >> "$GITHUB_STEP_SUMMARY"; exit 0
+          fi
+          case "$OUTCOME:$JOB_STATUS" in
+            open:*)    text="🗳 Модели чата: PR #$PR_NUMBER ждёт тебя. Открой, глянь таблицу «было → стало», смёржи. $PR_URL" ;;
+            merged:*)  text="✅ Модели чата: PR #$PR_NUMBER (пропавшие модели / цены) смёржен и выкачен сам. $PR_URL" ;;
+            none:success) echo "No PR, nothing to say." >> "$GITHUB_STEP_SUMMARY"; exit 0 ;;
+            *)         text="⚠️ Модели чата: проверка упала (${OUTCOME:-нет PR}). $RUN_URL" ;;
+          esac
+          curl -sS -o /dev/null -w "telegram: %{http_code}\n" \
+            --data-urlencode "chat_id=$TELEGRAM_CHAT_ID" \
+            --data-urlencode "text=$text" \
+            --data-urlencode "disable_web_page_preview=true" \
+            "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/sendMessage"

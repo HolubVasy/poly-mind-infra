@@ -40,6 +40,8 @@ Not in this repository, on purpose:
 | `scripts/build_presets.py` | - | Generates `presets.json` from `slots.yaml` |
 | `scripts/check_models.py` | - | Facts for the monthly model review |
 | `scripts/judge.py` | - | Quality gate: candidate vs current on `tests/standard_prompt.md`, verdict to `docs/model-log.md` |
+| `scripts/gate_check.py` | - | Guard: every replaced model vanished or won its verdict today; says if the PR may auto-merge |
+| `docs/model-log.md` | - | Every verdict with both answers; written by `judge.py` only |
 
 ## How a change reaches the server
 
@@ -138,11 +140,23 @@ What the review does, in order:
    (`check_models.py --update-prices`), `build_presets.py` regenerates the
    titles.
 5. ONE pull request with a before -> after table (slot, old model, new model,
-   old price, new price, why). Label `dead-models-only` when every change only
-   replaces a model missing from OpenRouter: such a preset is already broken,
-   so the PR is merged and deployed at once. Anything else waits for the owner.
+   old price, new price, why). `scripts/gate_check.py` then re-checks the
+   branch: every replaced model either vanished from OpenRouter or has a
+   winning verdict dated today in `docs/model-log.md`; otherwise the PR is
+   closed by the workflow. Label `auto-merge` (only vanished-model
+   replacements and price markers) -> merged and deployed by the workflow: a
+   preset with a vanished model is already broken. Anything else waits for
+   the owner.
 6. A Telegram message with the link, sent by a plain `curl` from the workflow
-   (no Claude in that step). Silent when there is no pull request.
+   (no Claude in that step). Silent when there is no pull request; a failed
+   run does send a message.
+
+Dry run: Actions -> Model check -> Run workflow -> dry_run. Report and price
+diff only, no Claude, no PR, no message; needs no secret.
+
+Pull requests opened with `GITHUB_TOKEN` do not trigger the `Validate`
+workflow, so the model-check run itself runs `validate.py` and
+`gate_check.py` on the branch before merging or handing it to the owner.
 
 Rules that bind whoever edits `slots.yaml`, human or Claude:
 - A newer model in the same slot replaces the old entry: same `presetId`, new
