@@ -85,7 +85,7 @@ def main() -> int:
             return 1
         print("ok: presets.json matches slots.yaml")
         return 0
-    PRESETS_PATH.write_text(text, encoding="utf-8")
+    PRESETS_PATH.write_text(text, encoding="utf-8", newline="\n")
     print(f"wrote {PRESETS_PATH.relative_to(ROOT)}: {len(data['presets'])} presets")
     return 0
 

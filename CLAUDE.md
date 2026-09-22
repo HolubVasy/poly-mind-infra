@@ -73,9 +73,8 @@ Consequence: a preset created in the chat UI is deleted by the next deploy.
 
 **`presets.json` is itself generated** from `models/slots.yaml` by
 `scripts/build_presets.py`. Change models in `slots.yaml`, run the script, commit
-both. (Until the slot titles are switched on, `validate.py` only checks that the
-two files agree on presetId, model and endpoint; after that it demands
-`build_presets.py --check` to pass, byte for byte.)
+both. `validate.py` fails when `presets.json` is not byte for byte what
+`slots.yaml` generates - so nobody edits it by hand or types a price marker.
 
 `slots.yaml` in one breath: vendors (Claude, OpenAI, Grok, Gemini, Kimi, GLM,
 plus the cheap ones kept from before), three categories each - `flagship`,
