@@ -101,8 +101,17 @@ category; a new NAME the ladder does not know is reported by the monthly check
 guessed. The ladder is the owner's positioning decision, written down once.
 
 **Title format**, assembled by `build_presets.py`, never typed:
-`<colour> x<N> | <icon> <Vendor> · <category> (<label>)`, e.g.
-`🔴 x20 | 🧠 Claude · флагман (Fable 5.1)`.
+`<icon> <category> · <Vendor> <label> · <colour> x<N>`, e.g.
+`🧠 флагман · Claude Fable 5.1 · 🔴 x20`.
+
+**Menu order** (owner's rule, 2026-09-22): LibreChat sorts presets by their
+`order` field, and `build_presets.py` assigns it - category top to bottom,
+then vendors in the order they are listed in `slots.yaml` (Claude, OpenAI,
+Gemini, Grok, GLM, Kimi, then the extras), then the dearer model first when
+one vendor has two on a shelf. So every vendor sits in the same place on
+every shelf, and the order moves only when the owner reorders the vendor
+list - never when a version or a price changes. `apply_presets.js` syncs
+`order` like any other field.
 - `x<N>` = `out_per_m / price_unit` (2.5), rounded: Sonnet 5 (10/M) is x4,
   Opus 5 (25/M) x10, Fable 5.1 (50/M) x20.
 - Colour by N: `⚪️` up to x1, `🟢` up to x7, `🔴` above. Icon by category:

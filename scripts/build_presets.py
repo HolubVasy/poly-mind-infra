@@ -2,11 +2,17 @@
 """Generates presets/presets.json from models/slots.yaml.
 
 Every model in slots.yaml becomes one preset. The title is assembled here:
-    <colour> x<N> | <icon> <Vendor> · <category> (<label>)
-    e.g.  🔴 x20 | 🧠 Claude · флагман (Fable 5.1)
+    <icon> <category> · <Vendor> <label> · <colour> x<N>
+    e.g.  🧠 флагман · Claude Fable 5.1 · 🔴 x20
 x<N> is the output price divided by price_unit, rounded; the colour follows N.
 Nobody types a price marker: check_models.py refreshes out_per_m from
 OpenRouter, this script turns it into the title.
+
+The menu order is the `order` field LibreChat sorts by (owner's rule,
+2026-09-22): category (top to bottom as in slots.yaml), then vendor in the
+order the vendors are listed in slots.yaml, then - only when one vendor has
+two models on one shelf - the dearer one first. The order changes only when
+the owner changes the vendor list, never when a version or a price does.
 
 Usage: python scripts/build_presets.py           # writes presets/presets.json
        python scripts/build_presets.py --check   # exit 1 if the file is stale
@@ -47,24 +53,30 @@ def price_marker(out_per_m: float, slots: dict) -> tuple[int, str]:
 def title_for(vendor: dict, category: str, model: dict, slots: dict) -> str:
     n, colour = price_marker(model["out_per_m"], slots)
     cat = slots["categories"][category]
-    return f"{colour} x{n} | {cat['icon']} {vendor['name']} · {cat['title']} ({model['label']})"
+    label = model["label"]
+    # "Grok 4.7" already names the vendor; "Fable 5.1" does not.
+    name = label if label.startswith(vendor["name"]) else f"{vendor['name']} {label}"
+    return f"{cat['icon']} {cat['title']} · {name} · {colour} x{n}"
 
 
 def iter_models(slots: dict):
-    for vendor in slots["vendors"]:
-        for category in slots["categories"]:
-            for model in vendor.get(category) or []:
+    """Menu order: category, then vendor as listed, then dearer first."""
+    for category in slots["categories"]:
+        for vendor in slots["vendors"]:
+            models = sorted(vendor.get(category) or [], key=lambda m: -float(m["out_per_m"]))
+            for model in models:
                 yield vendor, category, model
 
 
 def build(slots: dict) -> dict:
     presets = []
-    for vendor, category, model in iter_models(slots):
+    for order, (vendor, category, model) in enumerate(iter_models(slots), start=1):
         presets.append({
             "presetId": model["presetId"],
             "endpoint": slots["endpoint"],
             "model": model["id"],
             "title": title_for(vendor, category, model, slots),
+            "order": order,
             **PRESET_DEFAULTS,
         })
     return {"presets": presets}
