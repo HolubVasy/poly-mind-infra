@@ -160,6 +160,19 @@ Pull requests opened with `GITHUB_TOKEN` do not trigger the `Validate`
 workflow, so the model-check run itself runs `validate.py` and
 `gate_check.py` on the branch before merging or handing it to the owner.
 
+**Who decides the category.** The owner, once, by hand in `slots.yaml`:
+flagship is the vendor's strongest and dearest model, frontier the everyday
+one a step below, workhorse the cheap fast one. The monthly review only bumps
+the version inside a line and NEVER moves a model to another shelf, because
+nothing in the catalogue states a tier. What it does instead is check the
+shelves by price - the one objective signal - and write notes for the owner
+(`check_models.py`, section "Полки", also in the Telegram message):
+- a shelf crossed: the cheaper category costs more than the dearer one;
+- a model newer than everything we run and dearer than our top of that
+  vendor - probably a new line, and a new flagship is placed by hand;
+- an empty category of a vendor marked `core: true` in `slots.yaml`.
+These notes are advice, never an automatic edit.
+
 Rules that bind whoever edits `slots.yaml`, human or Claude:
 - A newer model in the same slot replaces the old entry: same `presetId`, new
   `id`, new `label`, new `out_per_m`. The replaced model leaves the endpoint

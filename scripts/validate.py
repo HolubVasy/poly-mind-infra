@@ -120,7 +120,7 @@ def check_slots(endpoints: dict[str, dict]) -> None:
                 if m.get("id") not in listed:
                     errors.append(f"{where}: not in the models.default list of {endpoint!r}")
         for key in vendor:
-            if key not in ("name", "prefix", *categories):
+            if key not in ("name", "prefix", "core", *categories):
                 errors.append(f"slots.yaml vendor {name!r}: unknown key {key!r} (categories are {categories})")
     cap = int(slots.get("max_models") or 0)
     if cap and len(by_id) > cap:
