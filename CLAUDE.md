@@ -79,36 +79,40 @@ both; `validate.py` fails when the file is not byte for byte what `slots.yaml`
 generates, so nobody edits it by hand or types a price marker.
 
 `slots.yaml`: vendors (Claude, OpenAI, Gemini, Grok, GLM, Kimi, then the cheap
-extras DeepSeek and MiniMax), four categories each, top to bottom - `flagship`
-(exactly ONE model: the one the vendor positions as its best), `frontier`,
-`workhorse`, `cheap` - at most `max_models` (20) in total. A model = OpenRouter
-`id`, a stable `presetId`, a short `label`, a `line` (the word in the id that
-names its line: opus, sonnet, terra-pro, flash) and `out_per_m`, the output
-price OpenRouter reports.
+extras DeepSeek and MiniMax), three categories each, top to bottom - `flagship`
+(exactly ONE model: the one the vendor positions as its best), `workhorse`
+(the everyday model - in the owner's words "ок, но не ах и не ох": fine,
+not wow, not ouch; a vendor's only strong line lives here), `cheap` - at
+most `max_models` (20) in total. A model = OpenRouter `id`, a stable
+`presetId`, a short `label`, a `line` (the word in the id that names its
+line: sonnet, terra-pro, flash) and `out_per_m`, the output price OpenRouter
+reports.
 
 The category is the owner's call, by how the vendor positions the model - not
-by price, not computed. Empty shelves are legitimate: a vendor that sells no
-model of a rung has none here, and nothing is added to fill a grid (Gemini has
-no frontier; Grok, Kimi and GLM are one strong line each - frontier).
-Iteration 0, approved by the owner on 2026-09-22:
+by price, not computed. There is no "frontier" shelf on purpose: "a step
+below the flagship" is a tier for vendors, not for the mother (Opus at twice
+the price of Sonnet was neither here nor there - dropped 2026-09-23). Empty
+shelves are legitimate: a vendor that sells no model of a rung has none here,
+and nothing is added to fill a grid. Iteration 1, approved by the owner on
+2026-09-23:
 
-| | flagship | frontier | workhorse | cheap |
-|---|---|---|---|---|
-| Claude | Fable 5.1 | Opus 5.5 | Sonnet 5 | - |
-| OpenAI | GPT-6 Astra Pro | GPT-5.6 Terra Pro | GPT-5.6 Sol Pro | GPT-6 Luna Pro |
-| Gemini | - | - | Gemini 3.8 Flash | - |
-| Grok | - | Grok 4.7 | - | - |
-| GLM | - | GLM 5.3 | - | - |
-| Kimi | - | Kimi K3 | - | - |
-| DeepSeek (extra) | - | - | - | DeepSeek V4 |
-| MiniMax (extra) | - | - | - | MiniMax M3 |
+| | flagship | workhorse | cheap |
+|---|---|---|---|
+| Claude | Fable 5.1 | Sonnet 5 | - |
+| OpenAI | GPT-6 Astra Pro | GPT-5.6 Terra Pro | GPT-6 Luna Pro |
+| Gemini | - | - | Gemini 3.8 Flash |
+| Grok | - | Grok 4.7 | - |
+| GLM | - | GLM 5.3 | - |
+| Kimi | - | Kimi K3 | - |
+| DeepSeek (extra) | - | - | DeepSeek V4 |
+| MiniMax (extra) | - | - | MiniMax M3 |
 
 Preset = slot: a new version replaces the entry in place and keeps its
 `presetId`, so the mother sees the same preset with a new version.
 
 **Title**, assembled by `build_presets.py`, never typed:
 `<icon> <label> · <colour> x<N>`, e.g. `🧠 Fable 5.1 · 🔴 x20`. Icon by
-category (`🧠` flagship, `🔥` frontier, `⚙️` workhorse, `⚡` cheap), no
+category (`🧠` flagship, `⚙️` workhorse, `⚡` cheap), no
 category word and no vendor - LibreChat prints the model id right after the
 title in the menu, so anything more is noise. `x<N>` = `out_per_m / 2.5`,
 rounded; colour `⚪️` up to x1, `🟢` up to x7, `🔴` above (thresholds in

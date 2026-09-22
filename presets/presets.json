@@ -31,12 +31,12 @@
       "endpointType": "custom",
       "isArchived": false,
       "maxContextTokens": 900000,
-      "model": "anthropic/claude-opus-5.5",
+      "model": "anthropic/claude-sonnet-5",
       "order": 3,
-      "presetId": "794f02de-4ec5-49c2-84af-600994a2a41d",
+      "presetId": "0f7adf43-3c73-49a4-b6c4-934e9a5e9e12",
       "resendFiles": true,
       "tags": [],
-      "title": "🔥 Opus 5.5 · 🔴 x8",
+      "title": "⚙️ Sonnet 5 · 🟢 x4",
       "web_search": false
     },
     {
@@ -49,7 +49,7 @@
       "presetId": "275eb791-c305-416d-a53a-e95fb93b4a0b",
       "resendFiles": true,
       "tags": [],
-      "title": "🔥 GPT-5.6 Terra Pro · 🟢 x5",
+      "title": "⚙️ GPT-5.6 Terra Pro · 🟢 x5",
       "web_search": false
     },
     {
@@ -62,7 +62,7 @@
       "presetId": "07dbbec8-c752-480c-b036-2143241c052b",
       "resendFiles": true,
       "tags": [],
-      "title": "🔥 Grok 4.7 · 🟢 x2",
+      "title": "⚙️ Grok 4.7 · 🟢 x2",
       "web_search": false
     },
     {
@@ -75,7 +75,7 @@
       "presetId": "89f57356-bc37-4e7f-beea-38f0d821f84b",
       "resendFiles": true,
       "tags": [],
-      "title": "🔥 GLM 5.3 · ⚪️ x1",
+      "title": "⚙️ GLM 5.3 · ⚪️ x1",
       "web_search": false
     },
     {
@@ -88,46 +88,7 @@
       "presetId": "a576b4c2-7eb7-41a1-8c5a-2a64dba86728",
       "resendFiles": true,
       "tags": [],
-      "title": "🔥 Kimi K3 · 🟢 x6",
-      "web_search": false
-    },
-    {
-      "endpoint": "Все",
-      "endpointType": "custom",
-      "isArchived": false,
-      "maxContextTokens": 900000,
-      "model": "anthropic/claude-sonnet-5",
-      "order": 8,
-      "presetId": "0f7adf43-3c73-49a4-b6c4-934e9a5e9e12",
-      "resendFiles": true,
-      "tags": [],
-      "title": "⚙️ Sonnet 5 · 🟢 x4",
-      "web_search": false
-    },
-    {
-      "endpoint": "Все",
-      "endpointType": "custom",
-      "isArchived": false,
-      "maxContextTokens": 900000,
-      "model": "openai/gpt-5.6-sol-pro",
-      "order": 9,
-      "presetId": "c0cc4430-7970-4210-83be-490e24a8b432",
-      "resendFiles": true,
-      "tags": [],
-      "title": "⚙️ GPT-5.6 Sol Pro · 🟢 x4",
-      "web_search": false
-    },
-    {
-      "endpoint": "Все",
-      "endpointType": "custom",
-      "isArchived": false,
-      "maxContextTokens": 900000,
-      "model": "google/gemini-3.8-flash",
-      "order": 10,
-      "presetId": "dcd5732f-6ace-4ad8-b965-97dbb6a13229",
-      "resendFiles": true,
-      "tags": [],
-      "title": "⚙️ Gemini 3.8 Flash · 🟢 x2",
+      "title": "⚙️ Kimi K3 · 🟢 x6",
       "web_search": false
     },
     {
@@ -136,7 +97,7 @@
       "isArchived": false,
       "maxContextTokens": 900000,
       "model": "openai/gpt-6-luna-pro",
-      "order": 11,
+      "order": 8,
       "presetId": "aab73c92-3187-4396-b5bd-ee305dffaa17",
       "resendFiles": true,
       "tags": [],
@@ -148,8 +109,21 @@
       "endpointType": "custom",
       "isArchived": false,
       "maxContextTokens": 900000,
+      "model": "google/gemini-3.8-flash",
+      "order": 9,
+      "presetId": "dcd5732f-6ace-4ad8-b965-97dbb6a13229",
+      "resendFiles": true,
+      "tags": [],
+      "title": "⚡ Gemini 3.8 Flash · 🟢 x2",
+      "web_search": false
+    },
+    {
+      "endpoint": "Все",
+      "endpointType": "custom",
+      "isArchived": false,
+      "maxContextTokens": 900000,
       "model": "deepseek/deepseek-v4-pro-0813",
-      "order": 12,
+      "order": 10,
       "presetId": "dbeba7cf-f4e0-496b-b9af-cc73aa208534",
       "resendFiles": true,
       "tags": [],
@@ -162,7 +136,7 @@
       "isArchived": false,
       "maxContextTokens": 900000,
       "model": "minimax/minimax-m3",
-      "order": 13,
+      "order": 11,
       "presetId": "18c842da-c24a-42d4-9aa0-e0651a19d51c",
       "resendFiles": true,
       "tags": [],
