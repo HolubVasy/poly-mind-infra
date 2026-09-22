@@ -20,6 +20,7 @@ import yaml
 ROOT = Path(__file__).resolve().parent.parent
 YAML_PATH = ROOT / "librechat" / "librechat.yaml"
 PRESETS_PATH = ROOT / "presets" / "presets.json"
+SLOTS_PATH = ROOT / "models" / "slots.yaml"
 
 errors: list[str] = []
 warnings: list[str] = []
@@ -87,16 +88,65 @@ def check_presets(endpoints: dict[str, dict]) -> None:
             )
 
 
+def check_slots(endpoints: dict[str, dict]) -> None:
+    """models/slots.yaml is where models are chosen; presets.json must mirror it.
+
+    Loose check for now: same presetIds, same model per presetId, and every
+    slot model present in the endpoint list. Titles are still free-form until
+    presets.json is generated from slots.yaml (scripts/build_presets.py).
+    """
+    slots = yaml.safe_load(SLOTS_PATH.read_text(encoding="utf-8"))
+    endpoint = slots.get("endpoint")
+    ep = endpoints.get(endpoint)
+    if ep is None:
+        errors.append(f"slots.yaml: endpoint {endpoint!r} is not in librechat.yaml")
+        return
+    listed = ((ep.get("models") or {}).get("default")) or []
+    categories = list(slots.get("categories") or {})
+    if not categories:
+        errors.append("slots.yaml: no categories")
+    by_id: dict[str, str] = {}
+    for vendor in slots.get("vendors") or []:
+        name = vendor.get("name") or "?"
+        for cat in categories:
+            for m in vendor.get(cat) or []:
+                where = f"slots.yaml {name}/{cat} {m.get('id')!r}"
+                for field in ("id", "presetId", "label", "out_per_m"):
+                    if m.get(field) in (None, ""):
+                        errors.append(f"{where}: missing {field}")
+                if m.get("presetId") in by_id:
+                    errors.append(f"{where}: presetId {m.get('presetId')} used twice")
+                by_id[m.get("presetId")] = m.get("id")
+                if m.get("id") not in listed:
+                    errors.append(f"{where}: not in the models.default list of {endpoint!r}")
+        for key in vendor:
+            if key not in ("name", "prefix", *categories):
+                errors.append(f"slots.yaml vendor {name!r}: unknown key {key!r} (categories are {categories})")
+    cap = int(slots.get("max_models") or 0)
+    if cap and len(by_id) > cap:
+        errors.append(f"slots.yaml: {len(by_id)} models, the cap is max_models: {cap} - replace, do not add")
+    presets = json.loads(PRESETS_PATH.read_text(encoding="utf-8")).get("presets") or []
+    file_ids = {p.get("presetId"): p.get("model") for p in presets}
+    for pid in set(by_id) - set(file_ids):
+        errors.append(f"slots.yaml presetId {pid} ({by_id[pid]}) has no preset in presets.json")
+    for pid in set(file_ids) - set(by_id):
+        errors.append(f"presets.json presetId {pid} ({file_ids[pid]}) is not in slots.yaml")
+    for pid in set(by_id) & set(file_ids):
+        if by_id[pid] != file_ids[pid]:
+            errors.append(f"presetId {pid}: slots.yaml says {by_id[pid]!r}, presets.json says {file_ids[pid]!r}")
+
+
 def main() -> int:
     endpoints = load_endpoints()
     check_presets(endpoints)
+    check_slots(endpoints)
     for w in warnings:
         print(f"warning: {w}")
     for e in errors:
         print(f"ERROR: {e}")
     if errors:
         return 1
-    print(f"ok: {len(endpoints)} endpoints, presets consistent")
+    print(f"ok: {len(endpoints)} endpoints, presets consistent with librechat.yaml and slots.yaml")
     return 0
 
 
