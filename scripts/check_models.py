@@ -84,9 +84,19 @@ def update_prices(slots: dict, cat: dict[str, dict]) -> list[str]:
     return changes
 
 
-ORDER = ["flagship", "frontier", "workhorse"]
+ORDER = ["flagship", "frontier", "workhorse", "cheap"]
 # A variant is not a line of its own: :batch, :free, :thinking, previews.
 VARIANT = (":", "-preview", "-exp")
+
+
+def rung_of(short_id: str, ladder: dict[str, list[str]]) -> str | None:
+    """Same rule as validate.py: the longest matching rung word wins."""
+    best = None
+    for category, words in ladder.items():
+        for w in words or []:
+            if w in short_id and (best is None or len(w) > len(best[1])):
+                best = (category, w)
+    return best[0] if best else None
 
 
 def shelf_notes(slots: dict, cat: dict[str, dict]) -> list[str]:
@@ -96,21 +106,19 @@ def shelf_notes(slots: dict, cat: dict[str, dict]) -> list[str]:
     bumps versions inside a line, so nothing would otherwise notice that a
     vendor shuffled its line-up or launched a whole new line above our
     flagship. These notes go into the pull request for the owner to judge;
-    the review never re-categorises on its own.
+    the review never re-categorises on its own. Empty shelves are not
+    reported: a vendor that sells no model of a rung legitimately has none.
     """
     notes = []
     for vendor in slots.get("vendors") or []:
         name, prefix = vendor["name"], vendor["prefix"]
         prices: dict[str, float] = {}
         ours: set[str] = set()
-        empty = []
         for category in ORDER:
             models = vendor.get(category) or []
             ours |= {m["id"] for m in models}
             if models:
                 prices[category] = max(float(m["out_per_m"]) for m in models)
-            else:
-                empty.append(category)
         # the shelves must not cross: flagship >= frontier >= workhorse
         for higher, lower in (("flagship", "frontier"), ("frontier", "workhorse")):
             if higher in prices and lower in prices and prices[lower] > prices[higher]:
@@ -139,8 +147,17 @@ def shelf_notes(slots: dict, cat: dict[str, dict]) -> list[str]:
                 f"{name}: вышла {title} (`{mid}`) дороже нашего верха - ${out:g} против ${ceiling:g} за 1M. "
                 f"Похоже на новую линейку: если это новый флагман, поставь руками."
             )
-        if empty and vendor.get("core"):
-            notes.append(f"{name}: пустые категории - {', '.join(empty)}. Вендор основной, полка пустует.")
+        # A model newer than ours whose name fits no rung: a new line the
+        # ladder does not know. Reported, never placed.
+        ladder = vendor.get("ladder") or {}
+        unknown = sorted(
+            {m["id"] for m in cat.values()
+             if m["id"].startswith(prefix) and m.get("created", 0) > newest_ours
+             and not any(v in m["id"][len(prefix):] for v in VARIANT)
+             and rung_of(m["id"][len(prefix):], ladder) is None})
+        if unknown:
+            notes.append(f"{name}: новые имена, которых нет в лестнице - {', '.join(f'`{u}`' for u in unknown[:5])}. "
+                         f"Реши, какая это ступень, и допиши слово в ladder.")
     return notes
 
 
@@ -162,7 +179,13 @@ def main() -> int:
             for model in vendor.get(category) or []:
                 cur = describe(model["id"], cat)
                 since = cat[model["id"]].get("created", 0) if cur["exists"] else 0
-                newer = [c for c in cat.values() if c["id"].startswith(prefix) and c.get("created", 0) > since]
+                ladder = vendor.get("ladder") or {}
+                # A candidate is a newer model of the SAME rung of the vendor's
+                # ladder: Opus 5 -> Opus 5.5, never Opus -> Sonnet.
+                newer = [c for c in cat.values()
+                         if c["id"].startswith(prefix) and c.get("created", 0) > since
+                         and rung_of(c["id"][len(prefix):], ladder) == category
+                         and not any(v in c["id"][len(prefix):] for v in VARIANT)]
                 newer.sort(key=lambda c: c.get("created", 0), reverse=True)
                 slot_rows.append({
                     "slot": f"{vendor['name']}/{category}",

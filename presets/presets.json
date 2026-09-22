@@ -33,7 +33,7 @@
       "presetId": "0f7adf43-3c73-49a4-b6c4-934e9a5e9e12",
       "resendFiles": true,
       "tags": [],
-      "title": "🟢 x4 | 🔥 Claude · передовая (Sonnet 5)",
+      "title": "🟢 x4 | ⚙️ Claude · рабочая (Sonnet 5)",
       "web_search": false
     },
     {
@@ -57,7 +57,7 @@
       "presetId": "705e685d-16cc-42a5-8384-6c28043e446b",
       "resendFiles": true,
       "tags": [],
-      "title": "🔴 x20 | 🧠 OpenAI · флагман (GPT-6 Astra)",
+      "title": "🔴 x20 | 🔥 OpenAI · передовая (GPT-6 Astra)",
       "web_search": false
     },
     {
@@ -69,7 +69,7 @@
       "presetId": "275eb791-c305-416d-a53a-e95fb93b4a0b",
       "resendFiles": true,
       "tags": [],
-      "title": "🟢 x5 | 🔥 OpenAI · передовая (GPT-5.6 Terra Pro)",
+      "title": "🟢 x5 | ⚙️ OpenAI · рабочая (GPT-5.6 Terra Pro)",
       "web_search": false
     },
     {
@@ -81,7 +81,7 @@
       "presetId": "c0cc4430-7970-4210-83be-490e24a8b432",
       "resendFiles": true,
       "tags": [],
-      "title": "🟢 x4 | 🔥 OpenAI · передовая (GPT-5.6 Sol Pro)",
+      "title": "🟢 x4 | ⚙️ OpenAI · рабочая (GPT-5.6 Sol Pro)",
       "web_search": false
     },
     {
@@ -93,19 +93,7 @@
       "presetId": "aab73c92-3187-4396-b5bd-ee305dffaa17",
       "resendFiles": true,
       "tags": [],
-      "title": "⚪️ x0 | ⚡ OpenAI · рабочая (GPT-6 Luna Pro)",
-      "web_search": false
-    },
-    {
-      "endpoint": "Все",
-      "endpointType": "custom",
-      "isArchived": false,
-      "maxContextTokens": 900000,
-      "model": "x-ai/grok-4.7",
-      "presetId": "07dbbec8-c752-480c-b036-2143241c052b",
-      "resendFiles": true,
-      "tags": [],
-      "title": "🟢 x2 | 🔥 Grok · передовая (Grok 4.7)",
+      "title": "⚪️ x0 | ⚡ OpenAI · выгодная (GPT-6 Luna Pro)",
       "web_search": false
     },
     {
@@ -117,7 +105,19 @@
       "presetId": "dcd5732f-6ace-4ad8-b965-97dbb6a13229",
       "resendFiles": true,
       "tags": [],
-      "title": "🟢 x2 | ⚡ Gemini · рабочая (Gemini 3.8 Flash)",
+      "title": "🟢 x2 | ⚙️ Gemini · рабочая (Gemini 3.8 Flash)",
+      "web_search": false
+    },
+    {
+      "endpoint": "Все",
+      "endpointType": "custom",
+      "isArchived": false,
+      "maxContextTokens": 900000,
+      "model": "x-ai/grok-4.7",
+      "presetId": "07dbbec8-c752-480c-b036-2143241c052b",
+      "resendFiles": true,
+      "tags": [],
+      "title": "🟢 x2 | 🧠 Grok · флагман (Grok 4.7)",
       "web_search": false
     },
     {
@@ -153,7 +153,7 @@
       "presetId": "dbeba7cf-f4e0-496b-b9af-cc73aa208534",
       "resendFiles": true,
       "tags": [],
-      "title": "⚪️ x1 | ⚡ DeepSeek · рабочая (DeepSeek V4)",
+      "title": "⚪️ x1 | ⚡ DeepSeek · выгодная (DeepSeek V4)",
       "web_search": false
     },
     {
@@ -165,7 +165,7 @@
       "presetId": "18c842da-c24a-42d4-9aa0-e0651a19d51c",
       "resendFiles": true,
       "tags": [],
-      "title": "⚪️ x0 | ⚡ MiniMax · рабочая (MiniMax M3)",
+      "title": "⚪️ x0 | ⚡ MiniMax · выгодная (MiniMax M3)",
       "web_search": false
     }
   ]
