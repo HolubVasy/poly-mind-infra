@@ -38,22 +38,30 @@ def arg(name: str, default: str | None) -> str | None:
 
 def models_of(slots: dict) -> dict[str, dict]:
     out = {}
+    cats = slots.get("categories") or {}
     for vendor in slots.get("vendors") or []:
-        for category in slots.get("categories") or {}:
+        for category, cat in cats.items():
             for m in vendor.get(category) or []:
-                out[m["presetId"]] = {"id": m["id"], "slot": f"{vendor['name']}/{category}", "out_per_m": m["out_per_m"]}
+                out[m["presetId"]] = {
+                    "id": m["id"],
+                    "slot": f"{vendor['name']}/{category}",
+                    # The name as the owner sees it in the chat, for the Telegram digest.
+                    "name": f"{vendor['name']} · {cat.get('title', category)}",
+                    "label": m.get("label", m["id"]),
+                    "out_per_m": m["out_per_m"],
+                }
     return out
 
 
-def verdicts(today: str) -> set[tuple[str, str]]:
-    """(candidate, current) pairs that won or tied today.
+def verdicts(today: str) -> dict[tuple[str, str], str]:
+    """(candidate, current) -> verdict, for the pairs that won or tied today.
 
     Only headings outside the fenced blocks count. judge.py fences every model
     answer, so an answer cannot contain a verdict line that would be read here
     as a passed quality gate.
     """
     if not LOG_PATH.exists():
-        return set()
+        return {}
     lines, fence = [], None
     for line in LOG_PATH.read_text(encoding="utf-8").split("\n"):
         m = re.match(r"^(`{3,})\s*$", line)
@@ -64,8 +72,42 @@ def verdicts(today: str) -> set[tuple[str, str]]:
                 lines.append(line)
         elif m and m.group(1) == fence:
             fence = None
-    return {(cand, cur) for day, _slot, cand, cur, verdict in ENTRY.findall("\n".join(lines))
+    return {(cand, cur): verdict for day, _slot, cand, cur, verdict in ENTRY.findall("\n".join(lines))
             if day == today and verdict in ("better", "equal")}
+
+
+VERDICT_RU = {"better": "судья: лучше", "equal": "судья: не хуже"}
+
+
+def digest(changes: list[dict]) -> list[str]:
+    """One short Russian line per change, for the Telegram message: what was
+    replaced, why, and what it costs now (USD per 1M output tokens)."""
+    def money(a, b) -> str:
+        if a is None and b is None:
+            return ""
+        if a is None or b is None or float(a) == float(b):
+            return f"${float(b if b is not None else a):g}/1M"
+        arrow = "дешевле" if float(b) < float(a) else "дороже"
+        return f"${float(a):g} -> ${float(b):g}/1M, {arrow}"
+
+    lines = []
+    for c in changes:
+        name, old, new = c.get("name", c["slot"]), c.get("label_old"), c.get("label_new")
+        price = money(c.get("price_old"), c.get("price_new"))
+        if c["kind"] == "price":
+            lines.append(f"{name} ({new}): цена {money(c['from'], c['to'])}")
+        elif c["kind"] == "removed":
+            lines.append(f"{name}: убрали {old}")
+        elif c["kind"] == "added":
+            why = VERDICT_RU.get(c.get("verdict"), "новый слот")
+            lines.append(f"{name}: добавили {new} - {why}, {price}")
+        elif c["kind"] == "vanished":
+            lines.append(f"{name}: {old} -> {new} - пропала из OpenRouter, {price}")
+        elif c["kind"] == "upgrade":
+            lines.append(f"{name}: {old} -> {new} - {VERDICT_RU.get(c.get('verdict'), 'судья: лучше')}, {price}")
+        else:
+            lines.append(f"{name}: {old} -> {new} - БЕЗ ВЕРДИКТА, {price}")
+    return lines
 
 
 def main() -> int:
@@ -86,26 +128,39 @@ def main() -> int:
     for pid, n in new.items():
         o = old.get(pid)
         if o is None:
-            changes.append({"slot": n["slot"], "old": None, "new": n["id"], "kind": "added"})
+            changes.append({"slot": n["slot"], "name": n["name"], "old": None, "new": n["id"],
+                            "label_new": n["label"], "price_new": n["out_per_m"],
+                            "kind": "added", "verdict": won.get((n["id"], ""), "")})
             if not any(cand == n["id"] for cand, _ in won):
                 problems.append(f"{n['slot']}: {n['id']} added without a winning verdict today in docs/model-log.md")
             continue
         if o["id"] != n["id"]:
             if o["id"] in missing:
-                changes.append({"slot": n["slot"], "old": o["id"], "new": n["id"], "kind": "vanished"})
+                changes.append({"slot": n["slot"], "name": n["name"], "old": o["id"], "new": n["id"],
+                                "label_old": o["label"], "label_new": n["label"],
+                                "price_old": o["out_per_m"], "price_new": n["out_per_m"], "kind": "vanished"})
             elif (n["id"], o["id"]) in won:
-                changes.append({"slot": n["slot"], "old": o["id"], "new": n["id"], "kind": "upgrade"})
+                changes.append({"slot": n["slot"], "name": n["name"], "old": o["id"], "new": n["id"],
+                                "label_old": o["label"], "label_new": n["label"],
+                                "price_old": o["out_per_m"], "price_new": n["out_per_m"], "kind": "upgrade",
+                                "verdict": won[(n["id"], o["id"])]})
             else:
-                changes.append({"slot": n["slot"], "old": o["id"], "new": n["id"], "kind": "unjustified"})
+                changes.append({"slot": n["slot"], "name": n["name"], "old": o["id"], "new": n["id"],
+                                "label_old": o["label"], "label_new": n["label"],
+                                "price_old": o["out_per_m"], "price_new": n["out_per_m"], "kind": "unjustified"})
                 problems.append(f"{n['slot']}: {o['id']} -> {n['id']} has no winning verdict today and {o['id']} is not missing from OpenRouter")
         elif float(o["out_per_m"]) != float(n["out_per_m"]):
-            changes.append({"slot": n["slot"], "old": o["id"], "new": n["id"], "kind": "price", "from": o["out_per_m"], "to": n["out_per_m"]})
+            changes.append({"slot": n["slot"], "name": n["name"], "old": o["id"], "new": n["id"],
+                            "label_old": o["label"], "label_new": n["label"], "kind": "price",
+                            "from": o["out_per_m"], "to": n["out_per_m"]})
     for pid, o in old.items():
         if pid not in new:
-            changes.append({"slot": o["slot"], "old": o["id"], "new": None, "kind": "removed"})
+            changes.append({"slot": o["slot"], "name": o["name"], "old": o["id"], "new": None,
+                            "label_old": o["label"], "price_old": o["out_per_m"], "kind": "removed"})
 
     auto_merge = bool(changes) and not problems and all(c["kind"] in ("vanished", "price") for c in changes)
-    result = {"ok": not problems, "changes": changes, "problems": problems, "auto_merge": auto_merge}
+    result = {"ok": not problems, "changes": changes, "problems": problems, "auto_merge": auto_merge,
+              "digest": digest(changes)}
     if "--json" in sys.argv:
         Path(arg("--json", "")).write_text(json.dumps(result, indent=2, ensure_ascii=False), encoding="utf-8")
     for c in changes:

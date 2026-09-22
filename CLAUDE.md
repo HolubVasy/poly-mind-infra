@@ -147,9 +147,11 @@ What the review does, in order:
    replacements and price markers) -> merged and deployed by the workflow: a
    preset with a vanished model is already broken. Anything else waits for
    the owner.
-6. A Telegram message with the link, sent by a plain `curl` from the workflow
-   (no Claude in that step). Silent when there is no pull request; a failed
-   run does send a message.
+6. A Telegram message with the link and one short Russian line per change -
+   what was replaced, why (the judge's verdict, or "пропала из OpenRouter")
+   and what it costs now. The lines come ready from `gate_check.py`
+   (`.digest` in its JSON); the step is a plain `curl`, no Claude. Silent
+   when there is no pull request; a failed run does send a message.
 
 Dry run: Actions -> Model check -> Run workflow -> dry_run. Report and price
 diff only, no Claude, no PR, no message; needs no secret.
