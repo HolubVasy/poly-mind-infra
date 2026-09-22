@@ -1,0 +1,28 @@
+# Static checks on every pull request. The same scripts/validate.py runs again
+# on the server before apply.sh touches anything.
+name: Validate
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -q pyyaml
+      - name: Config and presets are consistent
+        run: python scripts/validate.py
+      - name: Scripts parse
+        run: |
+          bash -n scripts/apply.sh
+          bash -n scripts/remote-entry.sh
+          bash -n certbot/renewal-hooks/pre/stop-nginx.sh
+          bash -n certbot/renewal-hooks/post/start-nginx.sh
+          node --check scripts/apply_presets.js
+          python -m py_compile scripts/validate.py scripts/check_models.py

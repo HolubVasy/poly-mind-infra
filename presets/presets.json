@@ -1,0 +1,172 @@
+{
+  "presets": [
+    {
+      "presetId": "18c842da-c24a-42d4-9aa0-e0651a19d51c",
+      "endpoint": "Все",
+      "endpointType": "custom",
+      "isArchived": false,
+      "maxContextTokens": 900000,
+      "model": "minimax/minimax-m3",
+      "resendFiles": true,
+      "tags": [],
+      "title": "⚪️ x0 | ⚡ MiniMax M3",
+      "web_search": false
+    },
+    {
+      "presetId": "dbeba7cf-f4e0-496b-b9af-cc73aa208534",
+      "endpoint": "Все",
+      "endpointType": "custom",
+      "isArchived": false,
+      "maxContextTokens": 900000,
+      "model": "deepseek/deepseek-v4-pro-0813",
+      "resendFiles": true,
+      "tags": [],
+      "title": "⚪️ x0 | ⚡ DeepSeek V4",
+      "web_search": false
+    },
+    {
+      "presetId": "dcd5732f-6ace-4ad8-b965-97dbb6a13229",
+      "endpoint": "Все",
+      "endpointType": "custom",
+      "isArchived": false,
+      "maxContextTokens": 900000,
+      "model": "google/gemini-3.8-flash",
+      "resendFiles": true,
+      "tags": [],
+      "title": "⚪️ x1 | ⚡ Gemini 3.8 Flash",
+      "web_search": false
+    },
+    {
+      "presetId": "89f57356-bc37-4e7f-beea-38f0d821f84b",
+      "endpoint": "Все",
+      "endpointType": "custom",
+      "isArchived": false,
+      "maxContextTokens": 900000,
+      "model": "z-ai/glm-5.3",
+      "resendFiles": true,
+      "tags": [],
+      "title": "⚪️ x2 | 🔥 GLM 5.3",
+      "web_search": false
+    },
+    {
+      "presetId": "07dbbec8-c752-480c-b036-2143241c052b",
+      "endpoint": "Все",
+      "endpointType": "custom",
+      "isArchived": false,
+      "maxContextTokens": 900000,
+      "model": "x-ai/grok-4.6",
+      "resendFiles": true,
+      "tags": [],
+      "title": "🟢 x2 | 🔥 Grok 4.6",
+      "web_search": false
+    },
+    {
+      "presetId": "0f7adf43-3c73-49a4-b6c4-934e9a5e9e12",
+      "endpoint": "Все",
+      "endpointType": "custom",
+      "isArchived": false,
+      "maxContextTokens": 900000,
+      "model": "anthropic/claude-sonnet-5",
+      "resendFiles": true,
+      "tags": [],
+      "title": "🟢 x4 | 🧠 Claude Sonnet 5",
+      "web_search": false
+    },
+    {
+      "presetId": "a576b4c2-7eb7-41a1-8c5a-2a64dba86728",
+      "endpoint": "Все",
+      "endpointType": "custom",
+      "isArchived": false,
+      "maxContextTokens": 900000,
+      "model": "moonshotai/kimi-k3",
+      "resendFiles": true,
+      "tags": [],
+      "title": "🟢 x6 | 🔥 Kimi K3",
+      "web_search": false
+    },
+    {
+      "presetId": "794f02de-4ec5-49c2-84af-600994a2a41d",
+      "endpoint": "Все",
+      "endpointType": "custom",
+      "isArchived": false,
+      "maxContextTokens": 900000,
+      "model": "anthropic/claude-opus-5",
+      "resendFiles": true,
+      "tags": [],
+      "title": "🔴 x10 | 🧠 Claude Opus 5",
+      "web_search": false
+    },
+    {
+      "presetId": "b8d5531b-257e-4869-ada5-3c96cfae7b2b",
+      "endpoint": "Все",
+      "endpointType": "custom",
+      "isArchived": false,
+      "maxContextTokens": 900000,
+      "model": "anthropic/claude-fable-5.1",
+      "resendFiles": true,
+      "tags": [],
+      "title": "🔴 x20 | 🧠 Claude Fable 5.1",
+      "web_search": false
+    },
+    {
+      "presetId": "705e685d-16cc-42a5-8384-6c28043e446b",
+      "endpoint": "Все",
+      "endpointType": "custom",
+      "isArchived": false,
+      "maxContextTokens": 900000,
+      "model": "openai/gpt-6-astra",
+      "resendFiles": true,
+      "tags": [],
+      "title": "🔴 x20 | 🧠 GPT-6 Astra",
+      "web_search": false
+    },
+    {
+      "presetId": "ff117436-ed01-4691-82a5-3bd77a1bf058",
+      "endpoint": "Все",
+      "endpointType": "custom",
+      "isArchived": false,
+      "maxContextTokens": 900000,
+      "model": "openai/gpt-6-astra-pro",
+      "resendFiles": true,
+      "tags": [],
+      "title": "🔴 x20 | 🧠 GPT-6 Astra Pro",
+      "web_search": false
+    },
+    {
+      "presetId": "aab73c92-3187-4396-b5bd-ee305dffaa17",
+      "endpoint": "Все",
+      "endpointType": "custom",
+      "isArchived": false,
+      "maxContextTokens": 900000,
+      "model": "openai/gpt-5.6-luna-pro",
+      "resendFiles": true,
+      "tags": [],
+      "title": "⚪️ x0 | ⚡ GPT-5.6 Luna Pro",
+      "web_search": false
+    },
+    {
+      "presetId": "c0cc4430-7970-4210-83be-490e24a8b432",
+      "endpoint": "Все",
+      "endpointType": "custom",
+      "isArchived": false,
+      "maxContextTokens": 900000,
+      "model": "openai/gpt-5.6-sol-pro",
+      "resendFiles": true,
+      "tags": [],
+      "title": "🟢 x4 | 🧠 GPT-5.6 Sol Pro",
+      "web_search": false
+    },
+    {
+      "presetId": "275eb791-c305-416d-a53a-e95fb93b4a0b",
+      "endpoint": "Все",
+      "endpointType": "custom",
+      "isArchived": false,
+      "maxContextTokens": 900000,
+      "model": "openai/gpt-5.6-terra-pro",
+      "resendFiles": true,
+      "tags": [],
+      "title": "🟢 x5 | 🧠 GPT-5.6 Terra Pro",
+      "web_search": false
+    }
+  ]
+}

@@ -1,0 +1,94 @@
+# Monthly review of the models behind the presets and endpoint lists.
+#
+# 1. scripts/check_models.py collects facts from the OpenRouter catalogue.
+# 2. Claude applies the rules in CLAUDE.md ("Monthly model review") and, if
+#    anything should change, opens ONE pull request with a before -> after table.
+# 3. If that pull request only replaces models that disappeared from
+#    OpenRouter (label dead-models-only), it is merged and deployed right away:
+#    such a preset is already broken - it silently answers with another model.
+#    Everything else waits for the owner's merge.
+name: Model check
+
+on:
+  schedule:
+    - cron: "0 6 1 * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+  id-token: write
+  actions: write
+
+concurrency:
+  group: model-check
+  cancel-in-progress: false
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    env:
+      BRANCH: model-check-${{ github.run_id }}
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -q pyyaml
+
+      - name: Collect facts from OpenRouter
+        run: |
+          python scripts/check_models.py --json /tmp/model-report.json > /tmp/model-report.md
+          cat /tmp/model-report.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Label for the auto-merge path
+        run: gh label create dead-models-only --color B60205 --description "Only replaces models that vanished from OpenRouter" --force
+
+      - name: Claude reviews the models
+        uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          show_full_output: true
+          prompt: |
+            You are running the monthly model review of this repository.
+            Read CLAUDE.md first, especially the section "Monthly model review" -
+            its rules are binding. The facts gathered a minute ago are in
+            /tmp/model-report.md and /tmp/model-report.json.
+
+            If nothing needs to change, make no commit and no pull request; just
+            say so.
+
+            Otherwise, on a new branch named exactly "${{ env.BRANCH }}":
+            edit presets/presets.json and/or librechat/librechat.yaml,
+            run `python scripts/validate.py` until it passes, commit with a short
+            message, push, and open ONE pull request against main with
+            `gh pr create`. The body must contain a before -> after table
+            (preset or list, old model, new model, old price, new price, why) and
+            the list of models that disappeared from OpenRouter.
+            Add the label dead-models-only (`gh pr edit --add-label`) ONLY if
+            every change replaces a model missing from OpenRouter with its direct
+            successor from the same family - no other edits at all.
+          claude_args: '--allowed-tools "Read,Edit,Write,Glob,Grep,Bash(git:*),Bash(python scripts/validate.py),Bash(gh pr create:*),Bash(gh pr edit:*),Bash(gh pr view:*)"'
+
+      - name: Merge and deploy dead-model fixes
+        run: |
+          pr=$(gh pr list --head "$BRANCH" --state open --json number,labels --jq '.[0] // empty')
+          if [ -z "$pr" ]; then
+            echo "No pull request this month." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          number=$(echo "$pr" | jq -r .number)
+          if echo "$pr" | jq -e '.labels | map(.name) | index("dead-models-only")' >/dev/null; then
+            gh pr merge "$number" --squash --delete-branch
+            # A merge made with GITHUB_TOKEN does not trigger other workflows,
+            # so start the deploy explicitly.
+            gh workflow run deploy.yml --ref main
+            echo "PR #$number only replaced vanished models: merged and deployed." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "PR #$number waits for the owner's review." >> "$GITHUB_STEP_SUMMARY"
+          fi

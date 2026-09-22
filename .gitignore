@@ -1,0 +1,7 @@
+# Secrets never live here - see CLAUDE.md.
+.env
+*.env
+.htpasswd
+# Server-side backups made by apply.sh.
+*.bak-*
+__pycache__/

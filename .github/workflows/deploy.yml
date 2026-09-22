@@ -1,0 +1,50 @@
+# Applies main to the live server. Runs after every merge that touches what is
+# deployed, and on demand (with an optional dry run that only reports).
+#
+# The DEPLOY_SSH_KEY secret can do exactly one thing on the server: run
+# /usr/local/sbin/poly-mind-apply (forced command in root's authorized_keys).
+# It cannot open a shell, forward ports or run anything else.
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "librechat/**"
+      - "nginx/**"
+      - "certbot/**"
+      - "presets/**"
+      - "scripts/**"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Only report what would change"
+        type: boolean
+        default: false
+
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -q pyyaml
+      - run: python scripts/validate.py
+      - name: Apply on the server
+        env:
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DRY_RUN: ${{ inputs.dry_run }}
+        run: |
+          mkdir -p ~/.ssh
+          printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/deploy
+          chmod 600 ~/.ssh/deploy
+          cp .github/known_hosts ~/.ssh/known_hosts
+          cmd=apply
+          if [ "$DRY_RUN" = "true" ]; then cmd=dry-run; fi
+          ssh -i ~/.ssh/deploy -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes root@145.63.130.166 "$cmd"

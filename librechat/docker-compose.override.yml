@@ -1,0 +1,16 @@
+services:
+  api:
+    image: ghcr.io/danny-avila/librechat-dev@sha256:299b26eda27ce20c3fb04d8a47ab30256c06931a3a9d988b7f1a8938fa9effbd
+    volumes:
+      - type: bind
+        source: ./.env
+        target: /app/.env
+      - type: bind
+        source: ./librechat.yaml
+        target: /app/librechat.yaml
+      - ./images:/app/client/public/images
+      - ./uploads:/app/uploads
+      - ./logs:/app/logs
+
+  rag_api:
+    image: ghcr.io/danny-avila/librechat-rag-api-dev-lite:latest
