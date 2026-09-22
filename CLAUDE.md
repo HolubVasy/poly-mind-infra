@@ -189,6 +189,21 @@ also in the Telegram message):
   the owner adds its word to the ladder.
 These notes are advice, never an automatic edit.
 
+**Iteration 0 of the categories - approved by the owner on 2026-09-22.**
+This is the baseline every later month is a diff against; the ladders in
+`slots.yaml` encode it. Change it only on the owner's word.
+
+| | flagship | frontier | workhorse | cheap |
+|---|---|---|---|---|
+| Claude | Fable 5.1 | Opus 5.5 | Sonnet 5 | - |
+| OpenAI | GPT-6 Astra Pro | GPT-6 Astra | GPT-5.6 Terra Pro, Sol Pro | GPT-6 Luna Pro |
+| Gemini | - | - | Gemini 3.8 Flash | - |
+| Grok | Grok 4.7 | - | - | - |
+| Kimi | - | Kimi K3 | - | - |
+| GLM | - | GLM 5.3 | - | - |
+| DeepSeek (extra) | - | - | - | DeepSeek V4 |
+| MiniMax (extra) | - | - | - | MiniMax M3 |
+
 Rules that bind whoever edits `slots.yaml`, human or Claude:
 - A newer model in the same slot replaces the old entry: same `presetId`, new
   `id`, new `label`, new `out_per_m`. The replaced model leaves the endpoint
