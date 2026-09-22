@@ -46,7 +46,7 @@ vendors:
     flagship:
       - { id: anthropic/claude-fable-5.1, presetId: b8d5531b-257e-4869-ada5-3c96cfae7b2b, label: "Fable 5.1", out_per_m: 50.0 }
     frontier:
-      - { id: anthropic/claude-opus-5,    presetId: 794f02de-4ec5-49c2-84af-600994a2a41d, label: "Opus 5",    out_per_m: 25.0 }
+      - { id: anthropic/claude-opus-5.5,  presetId: 794f02de-4ec5-49c2-84af-600994a2a41d, label: "Opus 5.5",  out_per_m: 20.0 }
       - { id: anthropic/claude-sonnet-5,  presetId: 0f7adf43-3c73-49a4-b6c4-934e9a5e9e12, label: "Sonnet 5",  out_per_m: 10.0 }
     workhorse: []
 
@@ -59,13 +59,13 @@ vendors:
       - { id: openai/gpt-5.6-terra-pro, presetId: 275eb791-c305-416d-a53a-e95fb93b4a0b, label: "GPT-5.6 Terra Pro", out_per_m: 12.0 }
       - { id: openai/gpt-5.6-sol-pro,   presetId: c0cc4430-7970-4210-83be-490e24a8b432, label: "GPT-5.6 Sol Pro",   out_per_m: 10.0 }
     workhorse:
-      - { id: openai/gpt-5.6-luna-pro,  presetId: aab73c92-3187-4396-b5bd-ee305dffaa17, label: "GPT-5.6 Luna Pro",  out_per_m: 1.2 }
+      - { id: openai/gpt-6-luna-pro,    presetId: aab73c92-3187-4396-b5bd-ee305dffaa17, label: "GPT-6 Luna Pro",    out_per_m: 0.5 }
 
   - name: Grok
     prefix: x-ai/
     flagship: []
     frontier:
-      - { id: x-ai/grok-4.6, presetId: 07dbbec8-c752-480c-b036-2143241c052b, label: "Grok 4.6", out_per_m: 6.0 }
+      - { id: x-ai/grok-4.7, presetId: 07dbbec8-c752-480c-b036-2143241c052b, label: "Grok 4.7", out_per_m: 4.8 }
     workhorse: []
 
   - name: Gemini

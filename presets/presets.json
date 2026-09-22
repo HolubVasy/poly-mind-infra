@@ -17,11 +17,11 @@
       "endpointType": "custom",
       "isArchived": false,
       "maxContextTokens": 900000,
-      "model": "anthropic/claude-opus-5",
+      "model": "anthropic/claude-opus-5.5",
       "presetId": "794f02de-4ec5-49c2-84af-600994a2a41d",
       "resendFiles": true,
       "tags": [],
-      "title": "🔴 x10 | 🔥 Claude · передовая (Opus 5)",
+      "title": "🔴 x8 | 🔥 Claude · передовая (Opus 5.5)",
       "web_search": false
     },
     {
@@ -89,11 +89,11 @@
       "endpointType": "custom",
       "isArchived": false,
       "maxContextTokens": 900000,
-      "model": "openai/gpt-5.6-luna-pro",
+      "model": "openai/gpt-6-luna-pro",
       "presetId": "aab73c92-3187-4396-b5bd-ee305dffaa17",
       "resendFiles": true,
       "tags": [],
-      "title": "⚪️ x0 | ⚡ OpenAI · рабочая (GPT-5.6 Luna Pro)",
+      "title": "⚪️ x0 | ⚡ OpenAI · рабочая (GPT-6 Luna Pro)",
       "web_search": false
     },
     {
@@ -101,11 +101,11 @@
       "endpointType": "custom",
       "isArchived": false,
       "maxContextTokens": 900000,
-      "model": "x-ai/grok-4.6",
+      "model": "x-ai/grok-4.7",
       "presetId": "07dbbec8-c752-480c-b036-2143241c052b",
       "resendFiles": true,
       "tags": [],
-      "title": "🟢 x2 | 🔥 Grok · передовая (Grok 4.6)",
+      "title": "🟢 x2 | 🔥 Grok · передовая (Grok 4.7)",
       "web_search": false
     },
     {
