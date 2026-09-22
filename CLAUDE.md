@@ -79,10 +79,11 @@ both; `validate.py` fails when the file is not byte for byte what `slots.yaml`
 generates, so nobody edits it by hand or types a price marker.
 
 `slots.yaml`: vendors (Claude, OpenAI, Gemini, Grok, GLM, Kimi, then the cheap
-extras DeepSeek and MiniMax), three categories each, top to bottom - `flagship`
-(exactly ONE model: the one the vendor positions as its best), `workhorse`
-(the everyday model - in the owner's words "ок, но не ах и не ох": fine,
-not wow, not ouch; a vendor's only strong line lives here), `cheap` - at
+extras DeepSeek and MiniMax), three categories each, top to bottom, in the
+owner's words: `flagship` - "вау" (exactly ONE model: the one the vendor
+positions as its best); `workhorse` - "ок, но не ах и не ох" (the everyday
+model, fine, not wow, not ouch; a vendor's only strong line lives here);
+`cheap` - "ну ок" (cost-effective, for simple tasks) - at
 most `max_models` (20) in total. A model = OpenRouter `id`, a stable
 `presetId`, a short `label`, a `line` (the word in the id that names its
 line: sonnet, terra-pro, flash) and `out_per_m`, the output price OpenRouter
