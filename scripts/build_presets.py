@@ -2,8 +2,10 @@
 """Generates presets/presets.json from models/slots.yaml.
 
 Every model in slots.yaml becomes one preset. The title is assembled here:
-    <icon> <category> · <Vendor> <label> · <colour> x<N>
-    e.g.  🧠 флагман · Claude Fable 5.1 · 🔴 x20
+    <icon> <label> · <colour> x<N>
+    e.g.  🧠 Fable 5.1 · 🔴 x20
+The category shows as its icon only, and the vendor is not repeated: LibreChat
+prints the model id right after the title in the menu.
 x<N> is the output price divided by price_unit, rounded; the colour follows N.
 Nobody types a price marker: check_models.py refreshes out_per_m from
 OpenRouter, this script turns it into the title.
@@ -53,10 +55,9 @@ def price_marker(out_per_m: float, slots: dict) -> tuple[int, str]:
 def title_for(vendor: dict, category: str, model: dict, slots: dict) -> str:
     n, colour = price_marker(model["out_per_m"], slots)
     cat = slots["categories"][category]
-    label = model["label"]
-    # "Grok 4.7" already names the vendor; "Fable 5.1" does not.
-    name = label if label.startswith(vendor["name"]) else f"{vendor['name']} {label}"
-    return f"{cat['icon']} {cat['title']} · {name} · {colour} x{n}"
+    # Icon for the category, no word: LibreChat shows the model id right after
+    # the title, so anything more than the label and the price is noise.
+    return f"{cat['icon']} {model['label']} · {colour} x{n}"
 
 
 def iter_models(slots: dict):

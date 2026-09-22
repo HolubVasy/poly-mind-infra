@@ -40,7 +40,7 @@ Not in this repository, on purpose:
 | `scripts/build_presets.py` | - | Generates `presets.json` from `slots.yaml` |
 | `scripts/check_models.py` | - | Facts for the monthly model review |
 | `scripts/judge.py` | - | Quality gate: candidate vs current on `tests/standard_prompt.md`, verdict to `docs/model-log.md` |
-| `scripts/gate_check.py` | - | Guard: every replaced model vanished or won its verdict today; says if the PR may auto-merge |
+| `scripts/gate_check.py` | - | Guard: every replaced model vanished or won its verdict today; writes the Telegram lines |
 | `docs/model-log.md` | - | Every verdict with both answers; written by `judge.py` only |
 
 ## How a change reaches the server
@@ -69,139 +69,28 @@ not in the chat** (evenings Minsk time are safest).
 Presets live in MongoDB, owned by the single ADMIN account. The mother logs in to
 that same account, so these are her presets. `presets/presets.json` is the whole
 truth for the database: `apply_presets.js` adds, updates and **deletes** to match
-it, matching by `presetId` (a rename updates in place). Before writing it copies
-the current presets to a collection `presets_backup_<timestamp>`.
+it, matching by `presetId` (a rename updates in place), after copying the current
+presets to a collection `presets_backup_<timestamp>`. A preset created in the
+chat UI is deleted by the next deploy.
 
-Consequence: a preset created in the chat UI is deleted by the next deploy.
-
-**`presets.json` is itself generated** from `models/slots.yaml` by
+**`presets.json` is generated** from `models/slots.yaml` by
 `scripts/build_presets.py`. Change models in `slots.yaml`, run the script, commit
-both. `validate.py` fails when `presets.json` is not byte for byte what
-`slots.yaml` generates - so nobody edits it by hand or types a price marker.
+both; `validate.py` fails when the file is not byte for byte what `slots.yaml`
+generates, so nobody edits it by hand or types a price marker.
 
-`slots.yaml` in one breath: vendors (Claude, OpenAI, Gemini, Grok, Kimi, GLM,
-plus the cheap ones kept from before), four categories each, top to bottom -
-`flagship` (exactly ONE model: the one the vendor positions as its best),
-`frontier`, `workhorse`, `cheap` (cost-effective) - and in each category any
-number of models, at most `max_models` (20) in total. A model = OpenRouter id,
-a stable `presetId`, a short `label`, and `out_per_m`, the output price
-OpenRouter reports. Preset = slot, not model: a new version of a line replaces
-the entry in place and keeps its `presetId`, so the mother sees the same preset
-with a new version in brackets.
+`slots.yaml`: vendors (Claude, OpenAI, Gemini, Grok, GLM, Kimi, then the cheap
+extras DeepSeek and MiniMax), four categories each, top to bottom - `flagship`
+(exactly ONE model: the one the vendor positions as its best), `frontier`,
+`workhorse`, `cheap` - at most `max_models` (20) in total. A model = OpenRouter
+`id`, a stable `presetId`, a short `label`, a `line` (the word in the id that
+names its line: opus, sonnet, terra-pro, flash) and `out_per_m`, the output
+price OpenRouter reports.
 
-**A category is a position in the vendor's line-up, not a price.** Each vendor
-block carries a `ladder`: per category, the words in the model id that mark
-that rung (Claude: fable > opus > sonnet > haiku; OpenAI: astra > terra >
-sol > luna, `-pro` being a variant suffix, not a rung; Gemini: pro > flash > flash-lite - Gemini has no frontier,
-Grok, Kimi and GLM have only a frontier, by the owner's decision; a rung not
-sold on OpenRouter, like Grok Heavy, is not in the ladder). `validate.py` refuses a model filed on a rung its
-name does not say, and a second flagship. A new version of a rung inherits the
-category; a new NAME the ladder does not know is reported by the monthly check
-("новые имена, которых нет в лестнице") and placed by the owner, never
-guessed. The ladder is the owner's positioning decision, written down once.
-
-**Title format**, assembled by `build_presets.py`, never typed:
-`<icon> <category> · <Vendor> <label> · <colour> x<N>`, e.g.
-`🧠 флагман · Claude Fable 5.1 · 🔴 x20`.
-
-**Menu order** (owner's rule, 2026-09-22): LibreChat sorts presets by their
-`order` field, and `build_presets.py` assigns it - category top to bottom,
-then vendors in the order they are listed in `slots.yaml` (Claude, OpenAI,
-Gemini, Grok, GLM, Kimi, then the extras), then the dearer model first when
-one vendor has two on a shelf. So every vendor sits in the same place on
-every shelf, and the order moves only when the owner reorders the vendor
-list - never when a version or a price changes. `apply_presets.js` syncs
-`order` like any other field.
-- `x<N>` = `out_per_m / price_unit` (2.5), rounded: Sonnet 5 (10/M) is x4,
-  Opus 5 (25/M) x10, Fable 5.1 (50/M) x20.
-- Colour by N: `⚪️` up to x1, `🟢` up to x7, `🔴` above. Icon by category:
-  `🧠` flagship, `🔥` frontier, `⚙️` workhorse, `⚡` cheap. All thresholds are
-  in `slots.yaml`.
-
-**The rule that broke the presets on 2026-09-22:** a preset's `model` must be in
-the `models.default` list of its `endpoint` in `librechat.yaml`. If it is not,
-LibreChat does not fail - it silently answers with the FIRST model of that list
-(`anthropic/claude-fable-5.1` for "Все"), while the UI shows the preset.
-`validate.py` enforces this for `presets.json` and for `slots.yaml`. Endpoint-level
-`fetch:` keys are ignored by LibreChat (it reads `models.fetch`), so model lists
-are exactly what is written.
-
-The first model of each list is also the silent fallback - keep a sensible,
-not-too-expensive model first.
-
-## Monthly model review
-
-`Model check` runs on the 1st of each month at 06:00 UTC, and on demand. The
-owner's part is one Telegram message a month: open the pull request, read the
-before -> after table, merge. Nothing else - no lists to edit, no models to look
-up, no scripts to run.
-
-Who this serves: the mother, writing and editing scientific texts in Russian
-(nanoparticle methods, literature search, article editing). Quality of Russian
-and reliability beat novelty. Cost matters: the owner pays per token.
-
-What the review does, in order:
-1. `scripts/check_models.py` compares `slots.yaml` and the endpoint lists with
-   the OpenRouter catalogue: vanished models, newer models per vendor, prices.
-2. For every slot, the newest model of the same vendor on the SAME RUNG of
-   the ladder is the candidate (GPT-5.2 -> GPT-5.6, Sonnet 5 -> Sonnet 5.1).
-   `check_models.py` lists only those; categories never mix (a Flash never
-   replaces a Pro), and `:batch` / `:free` / preview variants are skipped.
-3. **Quality gate.** The candidate and the current model of that slot get the
-   same standard test prompt from `tests/standard_prompt.md` (a short Russian
-   scientific-editing task). A judge - the current Claude flagship - compares
-   the two answers blind. Candidate worse -> the slot is NOT changed; the
-   verdict and both answers go to `docs/model-log.md` with the date, so the
-   reasoning is on record. Equal or better -> it goes into the pull request.
-   No answer, or not in Russian -> not in the pull request. A vanished model
-   has no current answer to compare with: its successor goes in without the
-   gate. Run by hand: `OPENROUTER_API_KEY=... python scripts/judge.py --slot
-   "Claude/frontier" --current <id> --candidate <id> --judge <flagship id>`;
-   it prints one JSON line with `verdict` better / equal / worse / failed.
-   First check on 2026-09-22 (Opus 5 vs Sonnet 5, judge Fable 5.1): about
-   50 s and a few cents per pair.
-4. Prices in `slots.yaml` are refreshed from the catalogue
-   (`check_models.py --update-prices`), `build_presets.py` regenerates the
-   titles.
-5. ONE pull request with a before -> after table (slot, old model, new model,
-   old price, new price, why). `scripts/gate_check.py` then re-checks the
-   branch: every replaced model either vanished from OpenRouter or has a
-   winning verdict dated today in `docs/model-log.md`; otherwise the PR is
-   closed by the workflow. Label `auto-merge` (only vanished-model
-   replacements and price markers) -> merged and deployed by the workflow: a
-   preset with a vanished model is already broken. Anything else waits for
-   the owner.
-6. A Telegram message with the link and one short Russian line per change -
-   what was replaced, why (the judge's verdict, or "пропала из OpenRouter")
-   and what it costs now. The lines come ready from `gate_check.py`
-   (`.digest` in its JSON); the step is a plain `curl`, no Claude. Silent
-   when there is no pull request; a failed run does send a message.
-
-Dry run: Actions -> Model check -> Run workflow -> dry_run. Report and price
-diff only, no Claude, no PR, no message; needs no secret.
-
-Pull requests opened with `GITHUB_TOKEN` do not trigger the `Validate`
-workflow, so the model-check run itself runs `validate.py` and
-`gate_check.py` on the branch before merging or handing it to the owner.
-
-**Who decides the category.** The owner, once, by writing the vendor's
-ladder in `slots.yaml` (see Presets): flagship is THE model the vendor
-positions as its best, frontier the strong one a step below, workhorse the
-everyday one, cheap the cost-effective one. The monthly review only bumps the
-version inside a rung and NEVER moves a model to another shelf, because
-nothing in the catalogue states a tier. What it does instead is check the
-shelves and write notes for the owner (`check_models.py`, section "Полки",
-also in the Telegram message):
-- a shelf crossed: the cheaper category costs more than the dearer one;
-- a model newer than everything we run and dearer than our top of that
-  vendor - probably a new line, and a new flagship is placed by hand;
-- a model newer than ours whose name fits no rung of the ladder - a new line;
-  the owner adds its word to the ladder.
-These notes are advice, never an automatic edit.
-
-**Iteration 0 of the categories - approved by the owner on 2026-09-22.**
-This is the baseline every later month is a diff against; the ladders in
-`slots.yaml` encode it. Change it only on the owner's word.
+The category is the owner's call, by how the vendor positions the model - not
+by price, not computed. Empty shelves are legitimate: a vendor that sells no
+model of a rung has none here, and nothing is added to fill a grid (Gemini has
+no frontier; Grok, Kimi and GLM are one strong line each - frontier).
+Iteration 0, approved by the owner on 2026-09-22:
 
 | | flagship | frontier | workhorse | cheap |
 |---|---|---|---|---|
@@ -209,28 +98,87 @@ This is the baseline every later month is a diff against; the ladders in
 | OpenAI | GPT-6 Astra Pro | GPT-5.6 Terra Pro | GPT-5.6 Sol Pro | GPT-6 Luna Pro |
 | Gemini | - | - | Gemini 3.8 Flash | - |
 | Grok | - | Grok 4.7 | - | - |
-| Kimi | - | Kimi K3 | - | - |
 | GLM | - | GLM 5.3 | - | - |
+| Kimi | - | Kimi K3 | - | - |
 | DeepSeek (extra) | - | - | - | DeepSeek V4 |
 | MiniMax (extra) | - | - | - | MiniMax M3 |
 
-Rules that bind whoever edits `slots.yaml`, human or Claude:
-- A newer model in the same slot replaces the old entry: same `presetId`, new
-  `id`, new `label`, new `out_per_m`. The replaced model leaves the endpoint
-  list too, unless another slot still uses it.
-- A vanished model (absent from OpenRouter) is replaced by its direct
-  successor: same vendor, same category, newest release of that line. No
-  successor -> the previous version of the line; a slot never stays empty
-  because of a vanished model.
-- Vendors: Claude, OpenAI, Gemini, Grok, Kimi, GLM stay. A new vendor is added
-  only after it won the quality gate against the model it would replace, and
-  comes with its ladder. A vendor block may hold an empty category.
-- Empty shelves are legitimate and are NOT filled to complete the grid: a
-  vendor that sells no model of a rung has none here (Gemini has no
-  frontier; Grok, Kimi and GLM are one strong line each, frontier). A shelf is
-  filled only when the owner decides, and then through the quality gate.
-- At most `max_models` presets in total. Beyond the cap a model replaces one,
-  it is not added next to it.
+Preset = slot: a new version replaces the entry in place and keeps its
+`presetId`, so the mother sees the same preset with a new version.
+
+**Title**, assembled by `build_presets.py`, never typed:
+`<icon> <label> · <colour> x<N>`, e.g. `🧠 Fable 5.1 · 🔴 x20`. Icon by
+category (`🧠` flagship, `🔥` frontier, `⚙️` workhorse, `⚡` cheap), no
+category word and no vendor - LibreChat prints the model id right after the
+title in the menu, so anything more is noise. `x<N>` = `out_per_m / 2.5`,
+rounded; colour `⚪️` up to x1, `🟢` up to x7, `🔴` above (thresholds in
+`slots.yaml`).
+
+**Menu order**: LibreChat sorts presets by their `order` field, and
+`build_presets.py` assigns it - category top to bottom, then vendors in the
+order they are listed in `slots.yaml`, then the dearer model first when one
+vendor has two on a shelf. Every vendor sits in the same place on every shelf;
+the order moves only when the owner reorders the vendor list.
+
+**The rule that broke the presets on 2026-09-22:** a preset's `model` must be in
+the `models.default` list of its `endpoint` in `librechat.yaml`. If it is not,
+LibreChat does not fail - it silently answers with the FIRST model of that list
+(`anthropic/claude-fable-5.1` for "Все"), while the UI shows the preset.
+`validate.py` enforces this. Endpoint-level `fetch:` keys are ignored by
+LibreChat (it reads `models.fetch`), so model lists are exactly what is written.
+The first model of each list is also the silent fallback - keep a sensible,
+not-too-expensive model first.
+
+## Monthly model review
+
+`Model check` runs on the 1st of each month at 06:00 UTC, and on demand. The
+owner's part is one Telegram message a month: open the pull request, read the
+before -> after table, merge. Nothing else.
+
+Who this serves: the mother, writing and editing scientific texts in Russian
+(nanoparticle methods, literature search, article editing). Quality of Russian
+and reliability beat novelty. Cost matters: the owner pays per token.
+
+The robot knows one move: **a newer version of the same line replaces the old
+one if it passes the judge.** In order:
+1. `scripts/check_models.py` compares `slots.yaml` with the OpenRouter
+   catalogue: vanished models, prices (written back with `--update-prices`),
+   and per slot the newer models of the same vendor whose id contains the
+   slot's `line` (Opus 5 -> Opus 5.5). Variants (`:batch`, `:free`, previews)
+   are skipped. Nothing else is ever a candidate: no other lines, no other
+   categories, no empty shelves.
+2. **Quality gate** - `scripts/judge.py`: the candidate and the current model
+   get the same standard prompt from `tests/standard_prompt.md` (a short
+   Russian scientific-editing task); a judge model (the Claude flagship slot)
+   compares the two answers blind. `better` / `equal` -> the candidate goes
+   in; `worse` / `failed` (no answer, not in Russian) -> the slot stays. The
+   verdict and both answers go to `docs/model-log.md` (answers fenced, so a
+   model cannot forge a verdict line). A vanished model has no current
+   answer: its line's newest model goes in without the gate.
+3. ONE pull request with a before -> after table (slot, old, new, prices,
+   why). `scripts/gate_check.py` re-checks the branch: every replaced or
+   added model either vanished from OpenRouter or has a winning verdict
+   dated today, otherwise the workflow closes the PR. It also writes one
+   Russian line per change for the message.
+4. Telegram by a plain `curl`: the link plus those lines. Silent when there
+   is no PR; a failed run does send a message.
+
+Dry run: Actions -> Model check -> Run workflow -> dry_run. Report and price
+diff only, no Claude, no PR, no message; needs no secret. Run the judge by
+hand: `OPENROUTER_API_KEY=... python scripts/judge.py --slot "Claude/frontier"
+--current <id> --candidate <id> --judge <flagship id>` (about 50 s, cents).
+
+Pull requests opened with `GITHUB_TOKEN` do not trigger `Validate`, so the
+model-check run itself runs `validate.py` and `gate_check.py` on the branch.
+
+Rules for whoever edits `slots.yaml`, human or Claude:
+- A newer model replaces the old entry in place: same `presetId`, new `id`,
+  `label`, `out_per_m`; `line` stays. The replaced id leaves the "Все" list
+  unless another slot or endpoint still uses it.
+- Categories, vendors, the vendor order and empty shelves are the owner's
+  decisions. Claude never moves a model between categories, never fills a
+  shelf, never adds a vendor. A new line (a new word in a vendor's ids) is
+  placed by the owner.
 - Never: delete or rename endpoints, touch `nginx/`, `certbot/`, compose files
   or scripts, edit `presets.json` by hand.
 
