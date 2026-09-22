@@ -37,7 +37,9 @@ PROMPT_PATH = ROOT / "tests" / "standard_prompt.md"
 LOG_PATH = ROOT / "docs" / "model-log.md"
 API_URL = "https://openrouter.ai/api/v1/chat/completions"
 TIMEOUT = 180
-MAX_TOKENS = 6000
+# Reasoning models (Kimi, GLM) spend most of the budget on thinking; at 6000
+# they produced no answer at all and were scored as failures.
+MAX_TOKENS = 16000
 
 JUDGE_INSTRUCTIONS = """Ты сравниваешь два ответа на одно и то же задание по редактированию научного
 текста на русском языке. Оцени только качество выполнения задания: исправлены
