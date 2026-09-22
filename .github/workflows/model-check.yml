@@ -97,13 +97,13 @@ jobs:
 
             Do this, in order:
             1. For every slot in models/slots.yaml decide whether a newer model
-               of the SAME vendor, SAME line and SAME category exists in the
-               report's candidates (Sonnet 5 -> Sonnet 5.1, GPT-5.2 -> GPT-5.6;
-               never Flash for Pro, never a :batch, :free or preview variant
-               when the plain id exists). Also fill an EMPTY category of a
-               vendor if the vendor has an obvious model for it (Claude
-               workhorse = Haiku, Gemini flagship = Gemini Pro, Grok flagship,
-               Grok workhorse = mini). Stay within max_models.
+               of the SAME vendor on the SAME RUNG of its ladder exists in the
+               report's candidates (Sonnet 5 -> Sonnet 5.1, GPT-5.2 -> GPT-5.6).
+               The report already filters by rung and drops :batch, :free and
+               preview variants; do not go outside its candidate lists. Do not
+               fill empty shelves and do not move a model between categories:
+               that is the owner's positioning decision (see "Полки").
+               Stay within max_models.
             2. For every such candidate run the quality gate:
                python scripts/judge.py --slot "<Vendor>/<category>" --current <old id> --candidate <new id> --judge <id of the Claude flagship slot>
                (for an empty category use the vendor's frontier model as

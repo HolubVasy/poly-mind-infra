@@ -79,13 +79,25 @@ Consequence: a preset created in the chat UI is deleted by the next deploy.
 both. `validate.py` fails when `presets.json` is not byte for byte what
 `slots.yaml` generates - so nobody edits it by hand or types a price marker.
 
-`slots.yaml` in one breath: vendors (Claude, OpenAI, Grok, Gemini, Kimi, GLM,
-plus the cheap ones kept from before), three categories each - `flagship`,
-`frontier`, `workhorse` - and in each category any number of models, at most
-`max_models` (15) in total. A model = OpenRouter id, a stable `presetId`, a short
-`label`, and `out_per_m`, the output price OpenRouter reports. Preset = slot, not
-model: a new version of a line replaces the entry in place and keeps its
-`presetId`, so the mother sees the same preset with a new version in brackets.
+`slots.yaml` in one breath: vendors (Claude, OpenAI, Gemini, Grok, Kimi, GLM,
+plus the cheap ones kept from before), four categories each, top to bottom -
+`flagship` (exactly ONE model: the one the vendor positions as its best),
+`frontier`, `workhorse`, `cheap` (cost-effective) - and in each category any
+number of models, at most `max_models` (20) in total. A model = OpenRouter id,
+a stable `presetId`, a short `label`, and `out_per_m`, the output price
+OpenRouter reports. Preset = slot, not model: a new version of a line replaces
+the entry in place and keeps its `presetId`, so the mother sees the same preset
+with a new version in brackets.
+
+**A category is a position in the vendor's line-up, not a price.** Each vendor
+block carries a `ladder`: per category, the words in the model id that mark
+that rung (Claude: fable > opus > sonnet > haiku; OpenAI: astra-pro > astra >
+sol, terra > luna; Gemini: pro > flash > flash-lite - Gemini has no frontier,
+Kimi and GLM have only a frontier, by the owner's decision). `validate.py` refuses a model filed on a rung its
+name does not say, and a second flagship. A new version of a rung inherits the
+category; a new NAME the ladder does not know is reported by the monthly check
+("новые имена, которых нет в лестнице") and placed by the owner, never
+guessed. The ladder is the owner's positioning decision, written down once.
 
 **Title format**, assembled by `build_presets.py`, never typed:
 `<colour> x<N> | <icon> <Vendor> · <category> (<label>)`, e.g.
@@ -93,7 +105,8 @@ model: a new version of a line replaces the entry in place and keeps its
 - `x<N>` = `out_per_m / price_unit` (2.5), rounded: Sonnet 5 (10/M) is x4,
   Opus 5 (25/M) x10, Fable 5.1 (50/M) x20.
 - Colour by N: `⚪️` up to x1, `🟢` up to x7, `🔴` above. Icon by category:
-  `🧠` flagship, `🔥` frontier, `⚡` workhorse. All thresholds are in `slots.yaml`.
+  `🧠` flagship, `🔥` frontier, `⚙️` workhorse, `⚡` cheap. All thresholds are
+  in `slots.yaml`.
 
 **The rule that broke the presets on 2026-09-22:** a preset's `model` must be in
 the `models.default` list of its `endpoint` in `librechat.yaml`. If it is not,
@@ -120,9 +133,10 @@ and reliability beat novelty. Cost matters: the owner pays per token.
 What the review does, in order:
 1. `scripts/check_models.py` compares `slots.yaml` and the endpoint lists with
    the OpenRouter catalogue: vanished models, newer models per vendor, prices.
-2. For every slot, the newest model of the same line and category is the
-   candidate (GPT-5.2 -> GPT-5.6, Sonnet 5 -> Sonnet 5.1). A slot is filled only
-   from its own vendor; categories never mix (a Flash never replaces a Pro).
+2. For every slot, the newest model of the same vendor on the SAME RUNG of
+   the ladder is the candidate (GPT-5.2 -> GPT-5.6, Sonnet 5 -> Sonnet 5.1).
+   `check_models.py` lists only those; categories never mix (a Flash never
+   replaces a Pro), and `:batch` / `:free` / preview variants are skipped.
 3. **Quality gate.** The candidate and the current model of that slot get the
    same standard test prompt from `tests/standard_prompt.md` (a short Russian
    scientific-editing task). A judge - the current Claude flagship - compares
@@ -160,17 +174,19 @@ Pull requests opened with `GITHUB_TOKEN` do not trigger the `Validate`
 workflow, so the model-check run itself runs `validate.py` and
 `gate_check.py` on the branch before merging or handing it to the owner.
 
-**Who decides the category.** The owner, once, by hand in `slots.yaml`:
-flagship is the vendor's strongest and dearest model, frontier the everyday
-one a step below, workhorse the cheap fast one. The monthly review only bumps
-the version inside a line and NEVER moves a model to another shelf, because
+**Who decides the category.** The owner, once, by writing the vendor's
+ladder in `slots.yaml` (see Presets): flagship is THE model the vendor
+positions as its best, frontier the strong one a step below, workhorse the
+everyday one, cheap the cost-effective one. The monthly review only bumps the
+version inside a rung and NEVER moves a model to another shelf, because
 nothing in the catalogue states a tier. What it does instead is check the
-shelves by price - the one objective signal - and write notes for the owner
-(`check_models.py`, section "Полки", also in the Telegram message):
+shelves and write notes for the owner (`check_models.py`, section "Полки",
+also in the Telegram message):
 - a shelf crossed: the cheaper category costs more than the dearer one;
 - a model newer than everything we run and dearer than our top of that
   vendor - probably a new line, and a new flagship is placed by hand;
-- an empty category of a vendor marked `core: true` in `slots.yaml`.
+- a model newer than ours whose name fits no rung of the ladder - a new line;
+  the owner adds its word to the ladder.
 These notes are advice, never an automatic edit.
 
 Rules that bind whoever edits `slots.yaml`, human or Claude:
@@ -181,9 +197,13 @@ Rules that bind whoever edits `slots.yaml`, human or Claude:
   successor: same vendor, same category, newest release of that line. No
   successor -> the previous version of the line; a slot never stays empty
   because of a vanished model.
-- Vendors: Claude, OpenAI, Grok, Gemini, Kimi, GLM stay. A new vendor is added
-  only after it won the quality gate against the model it would replace. A
-  vendor block may hold an empty category.
+- Vendors: Claude, OpenAI, Gemini, Grok, Kimi, GLM stay. A new vendor is added
+  only after it won the quality gate against the model it would replace, and
+  comes with its ladder. A vendor block may hold an empty category.
+- Empty shelves are legitimate and are NOT filled to complete the grid: a
+  vendor that sells no model of a rung has none here (Gemini has no
+  frontier; Kimi and GLM are one strong line each, frontier). A shelf is
+  filled only when the owner decides, and then through the quality gate.
 - At most `max_models` presets in total. Beyond the cap a model replaces one,
   it is not added next to it.
 - Never: delete or rename endpoints, touch `nginx/`, `certbot/`, compose files

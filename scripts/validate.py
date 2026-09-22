@@ -88,6 +88,17 @@ def check_presets(endpoints: dict[str, dict]) -> None:
             )
 
 
+def rung_of(short_id: str, ladder: dict[str, list[str]]) -> str | None:
+    """The category whose rung word is in the id; the longest word wins, so
+    "astra-pro" beats "astra". None when no rung matches."""
+    best = None
+    for category, words in ladder.items():
+        for w in words or []:
+            if w in short_id and (best is None or len(w) > len(best[1])):
+                best = (category, w)
+    return best[0] if best else None
+
+
 def check_slots(endpoints: dict[str, dict]) -> None:
     """models/slots.yaml is where models are chosen; presets.json is generated from it.
 
@@ -108,6 +119,15 @@ def check_slots(endpoints: dict[str, dict]) -> None:
     by_id: dict[str, str] = {}
     for vendor in slots.get("vendors") or []:
         name = vendor.get("name") or "?"
+        prefix = vendor.get("prefix") or ""
+        ladder = vendor.get("ladder") or {}
+        if not ladder:
+            errors.append(f"slots.yaml vendor {name!r}: no ladder - categories are positions in the vendor's line-up, write its rung words")
+        for cat in ladder:
+            if cat not in categories:
+                errors.append(f"slots.yaml vendor {name!r}: ladder has unknown category {cat!r}")
+        if len(vendor.get("flagship") or []) > 1:
+            errors.append(f"slots.yaml vendor {name!r}: {len(vendor['flagship'])} flagships - the flagship is ONE model, the one the vendor positions as its best")
         for cat in categories:
             for m in vendor.get(cat) or []:
                 where = f"slots.yaml {name}/{cat} {m.get('id')!r}"
@@ -119,8 +139,16 @@ def check_slots(endpoints: dict[str, dict]) -> None:
                 by_id[m.get("presetId")] = m.get("id")
                 if m.get("id") not in listed:
                     errors.append(f"{where}: not in the models.default list of {endpoint!r}")
+                mid = str(m.get("id") or "")
+                if not mid.startswith(prefix):
+                    errors.append(f"{where}: id does not start with the vendor prefix {prefix!r}")
+                rung = rung_of(mid[len(prefix):], ladder)
+                if rung is None:
+                    errors.append(f"{where}: no rung of the {name} ladder matches this id - add its word to the ladder or drop the model")
+                elif rung != cat:
+                    errors.append(f"{where}: its name says rung {rung!r}, it is filed under {cat!r} - the category is the position in the line-up")
         for key in vendor:
-            if key not in ("name", "prefix", "core", *categories):
+            if key not in ("name", "prefix", "core", "ladder", *categories):
                 errors.append(f"slots.yaml vendor {name!r}: unknown key {key!r} (categories are {categories})")
     cap = int(slots.get("max_models") or 0)
     if cap and len(by_id) > cap:
