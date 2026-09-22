@@ -84,6 +84,66 @@ def update_prices(slots: dict, cat: dict[str, dict]) -> list[str]:
     return changes
 
 
+ORDER = ["flagship", "frontier", "workhorse"]
+# A variant is not a line of its own: :batch, :free, :thinking, previews.
+VARIANT = (":", "-preview", "-exp")
+
+
+def shelf_notes(slots: dict, cat: dict[str, dict]) -> list[str]:
+    """Sanity of the shelves, by price - the one objective signal there is.
+
+    Categories are assigned by hand in slots.yaml and the monthly review only
+    bumps versions inside a line, so nothing would otherwise notice that a
+    vendor shuffled its line-up or launched a whole new line above our
+    flagship. These notes go into the pull request for the owner to judge;
+    the review never re-categorises on its own.
+    """
+    notes = []
+    for vendor in slots.get("vendors") or []:
+        name, prefix = vendor["name"], vendor["prefix"]
+        prices: dict[str, float] = {}
+        ours: set[str] = set()
+        empty = []
+        for category in ORDER:
+            models = vendor.get(category) or []
+            ours |= {m["id"] for m in models}
+            if models:
+                prices[category] = max(float(m["out_per_m"]) for m in models)
+            else:
+                empty.append(category)
+        # the shelves must not cross: flagship >= frontier >= workhorse
+        for higher, lower in (("flagship", "frontier"), ("frontier", "workhorse")):
+            if higher in prices and lower in prices and prices[lower] > prices[higher]:
+                notes.append(
+                    f"{name}: полки разъехались - {lower} дороже, чем {higher} "
+                    f"(${prices[lower]:g} против ${prices[higher]:g} за 1M). Посмотри, та ли это категория."
+                )
+        if not prices:
+            continue
+        ceiling = max(prices.values())
+        # Only something RELEASED AFTER everything we run counts as news; an
+        # old expensive model (o1-pro, Opus 4.1) is not a new line.
+        newest_ours = max((cat[mid].get("created", 0) for mid in ours if mid in cat), default=0)
+        above = []
+        for m in cat.values():
+            mid = m["id"]
+            if not mid.startswith(prefix) or mid in ours or any(v in mid[len(prefix):] for v in VARIANT):
+                continue
+            if m.get("created", 0) <= newest_ours:
+                continue
+            out = per_million((m.get("pricing") or {}).get("completion"))
+            if out is not None and out > ceiling:
+                above.append((out, mid, m.get("name") or mid))
+        for out, mid, title in sorted(above, reverse=True)[:3]:
+            notes.append(
+                f"{name}: вышла {title} (`{mid}`) дороже нашего верха - ${out:g} против ${ceiling:g} за 1M. "
+                f"Похоже на новую линейку: если это новый флагман, поставь руками."
+            )
+        if empty and vendor.get("core"):
+            notes.append(f"{name}: пустые категории - {', '.join(empty)}. Вендор основной, полка пустует.")
+    return notes
+
+
 def main() -> int:
     slots = yaml.safe_load(SLOTS_PATH.read_text(encoding="utf-8"))
     cfg = yaml.safe_load(YAML_PATH.read_text(encoding="utf-8"))
@@ -123,6 +183,7 @@ def main() -> int:
         "endpoints": {name: [info[m] for m in ms] for name, ms in endpoints.items()},
         "missing": [m for m in used if not info[m]["exists"]],
         "price_changes": price_changes,
+        "shelves": shelf_notes(slots, cat),
     }
     if "--json" in sys.argv:
         out = Path(sys.argv[sys.argv.index("--json") + 1])
@@ -138,6 +199,8 @@ def main() -> int:
           f"Cap: {report['max_models']} models, {len(slot_rows)} in use.\n")
     print("## Missing models (must be replaced)\n")
     print("\n".join(f"- `{m}`" for m in report["missing"]) or "None.")
+    print("\n## Полки: что проверить руками (категории по цене)\n")
+    print("\n".join(f"- {n}" for n in report["shelves"]) or "Порядок полок в норме, новых линеек дороже нашего верха нет.")
     print("\n## Price changes written to slots.yaml\n")
     print("\n".join(f"- {c}" for c in price_changes) or "None.")
     print("\n## Slots\n")

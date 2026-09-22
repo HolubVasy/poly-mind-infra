@@ -61,6 +61,7 @@ jobs:
       - name: Facts from OpenRouter, prices into slots.yaml
         run: |
           python scripts/check_models.py --json "$REPORT_JSON" --update-prices > "$REPORT_MD"
+          jq -r '.shelves[]? | "• " + .' "$REPORT_JSON" > /tmp/shelves.txt
           python scripts/build_presets.py
           python scripts/validate.py
           cat "$REPORT_MD" >> "$GITHUB_STEP_SUMMARY"
@@ -121,9 +122,15 @@ jobs:
                python scripts/build_presets.py
                python scripts/validate.py
                python scripts/gate_check.py --base origin/main --report ${{ env.REPORT_JSON }}
-            6. If `git status --porcelain` is empty: make no commit, no branch,
+            6. Whatever you change or not, read the section "Полки" of the
+               report: those notes are about categories - shelves that crossed
+               by price, a new pricier line, an empty category of a core
+               vendor. NEVER re-categorise a model yourself and never fill a
+               shelf from a note alone: copy the notes into the pull request
+               under a heading "Полки" so the owner decides.
+            7. If `git status --porcelain` is empty: make no commit, no branch,
                no pull request, and end with the single line NO CHANGES.
-            7. Otherwise: git checkout -b "${{ env.BRANCH }}", commit everything
+            8. Otherwise: git checkout -b "${{ env.BRANCH }}", commit everything
                (including docs/model-log.md) with a short message, push, and
                open ONE pull request against main with `gh pr create`. The
                body must have a before -> after table (slot, old model, new
@@ -188,10 +195,18 @@ jobs:
           if [ -s /tmp/gate.json ]; then
             digest=$(jq -r '.digest[]? | "• " + .' /tmp/gate.json)
           fi
+          # Category notes: shelves crossed, a new pricier line, an empty shelf.
+          # They are worth a message even in a month when nothing changed.
+          shelves=""
+          [ -s /tmp/shelves.txt ] && shelves=$(cat /tmp/shelves.txt)
           case "$OUTCOME:$JOB_STATUS" in
-            open:*)    text=$(printf '🗳 Модели чата: PR #%s ждёт тебя.\n%s\n\nПочему так решено и ответы моделей - в PR: %s' "$PR_NUMBER" "$digest" "$PR_URL") ;;
+            open:*)    text=$(printf '🗳 Модели чата: PR #%s ждёт тебя.\n%s\n%s\n\nПочему так решено и ответы моделей - в PR: %s' "$PR_NUMBER" "$digest" "$shelves" "$PR_URL") ;;
             merged:*)  text=$(printf '✅ Модели чата: PR #%s смёржен и выкачен сам.\n%s\n\n%s' "$PR_NUMBER" "$digest" "$PR_URL") ;;
-            none:success) echo "No PR, nothing to say." >> "$GITHUB_STEP_SUMMARY"; exit 0 ;;
+            none:success)
+              if [ -z "$shelves" ]; then
+                echo "No PR, no shelf notes, nothing to say." >> "$GITHUB_STEP_SUMMARY"; exit 0
+              fi
+              text=$(printf '🔎 Модели чата: менять нечего, но глянь категории:\n%s\n\n%s' "$shelves" "$RUN_URL") ;;
             *)         text=$(printf '⚠️ Модели чата: проверка упала (%s). %s' "${OUTCOME:-нет PR}" "$RUN_URL") ;;
           esac
           curl -sS -o /dev/null -w "telegram: %{http_code}\n" \
