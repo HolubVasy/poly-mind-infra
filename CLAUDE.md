@@ -31,11 +31,13 @@ Not in this repository, on purpose:
 | `librechat/deploy-compose.yml` | `/opt/LibreChat/deploy-compose.yml` | Only its `client` service (LibreChat-NGINX) is used |
 | `nginx/nginx.conf` | `/opt/LibreChat/client/nginx.conf` | TLS, basic auth, proxy for chat and forpost |
 | `certbot/renewal-hooks/{pre,post}/*.sh` | `/etc/letsencrypt/renewal-hooks/...` | Stop/start nginx around cert renewal |
-| `presets/presets.json` | MongoDB `LibreChat.presets` | The presets in the chat's preset menu |
+| `models/slots.yaml` | - | Which models the chat offers: vendor x category, with prices. Source of `presets.json` |
+| `presets/presets.json` | MongoDB `LibreChat.presets` | The presets in the chat's preset menu. Generated, do not edit |
 | `scripts/validate.py` | - | Static checks (PR, deploy, server) |
 | `scripts/apply.sh` | runs from `/opt/poly-mind-infra` | Applies main to the server |
 | `scripts/apply_presets.js` | runs in `chat-mongodb` | Syncs presets.json into MongoDB |
 | `scripts/remote-entry.sh` | `/usr/local/sbin/poly-mind-apply` | The only command the deploy key may run |
+| `scripts/build_presets.py` | - | Generates `presets.json` from `slots.yaml` |
 | `scripts/check_models.py` | - | Facts for the monthly model review |
 
 ## How a change reaches the server
@@ -63,63 +65,96 @@ not in the chat** (evenings Minsk time are safest).
 
 Presets live in MongoDB, owned by the single ADMIN account. The mother logs in to
 that same account, so these are her presets. `presets/presets.json` is the whole
-truth: `apply_presets.js` adds, updates and **deletes** to match it, matching by
-`presetId` (a rename updates in place). Before writing it copies the current
-presets to a collection `presets_backup_<timestamp>`.
+truth for the database: `apply_presets.js` adds, updates and **deletes** to match
+it, matching by `presetId` (a rename updates in place). Before writing it copies
+the current presets to a collection `presets_backup_<timestamp>`.
 
-Consequence: a preset created in the chat UI is deleted by the next deploy. New
-presets are added here - give them a fresh UUID as `presetId`.
+Consequence: a preset created in the chat UI is deleted by the next deploy.
+
+**`presets.json` is itself generated** from `models/slots.yaml` by
+`scripts/build_presets.py`. Change models in `slots.yaml`, run the script, commit
+both. (Until the slot titles are switched on, `validate.py` only checks that the
+two files agree on presetId, model and endpoint; after that it demands
+`build_presets.py --check` to pass, byte for byte.)
+
+`slots.yaml` in one breath: vendors (Claude, OpenAI, Grok, Gemini, Kimi, GLM,
+plus the cheap ones kept from before), three categories each - `flagship`,
+`frontier`, `workhorse` - and in each category any number of models, at most
+`max_models` (15) in total. A model = OpenRouter id, a stable `presetId`, a short
+`label`, and `out_per_m`, the output price OpenRouter reports. Preset = slot, not
+model: a new version of a line replaces the entry in place and keeps its
+`presetId`, so the mother sees the same preset with a new version in brackets.
+
+**Title format**, assembled by `build_presets.py`, never typed:
+`<colour> x<N> | <icon> <Vendor> · <category> (<label>)`, e.g.
+`🔴 x20 | 🧠 Claude · флагман (Fable 5.1)`.
+- `x<N>` = `out_per_m / price_unit` (2.5), rounded: Sonnet 5 (10/M) is x4,
+  Opus 5 (25/M) x10, Fable 5.1 (50/M) x20.
+- Colour by N: `⚪️` up to x1, `🟢` up to x7, `🔴` above. Icon by category:
+  `🧠` flagship, `🔥` frontier, `⚡` workhorse. All thresholds are in `slots.yaml`.
 
 **The rule that broke the presets on 2026-09-22:** a preset's `model` must be in
 the `models.default` list of its `endpoint` in `librechat.yaml`. If it is not,
 LibreChat does not fail - it silently answers with the FIRST model of that list
 (`anthropic/claude-fable-5.1` for "Все"), while the UI shows the preset.
-`validate.py` enforces this. Endpoint-level `fetch:` keys are ignored by
-LibreChat (it reads `models.fetch`), so model lists are exactly what is written.
+`validate.py` enforces this for `presets.json` and for `slots.yaml`. Endpoint-level
+`fetch:` keys are ignored by LibreChat (it reads `models.fetch`), so model lists
+are exactly what is written.
 
 The first model of each list is also the silent fallback - keep a sensible,
 not-too-expensive model first.
 
 ## Monthly model review
 
-`Model check` runs on the 1st of each month at 06:00 UTC, and on demand. It runs
-`scripts/check_models.py` against the OpenRouter catalogue, then a Claude session
-decides under these rules. They are binding.
+`Model check` runs on the 1st of each month at 06:00 UTC, and on demand. The
+owner's part is one Telegram message a month: open the pull request, read the
+before -> after table, merge. Nothing else - no lists to edit, no models to look
+up, no scripts to run.
 
 Who this serves: the mother, writing and editing scientific texts in Russian
 (nanoparticle methods, literature search, article editing). Quality of Russian
 and reliability beat novelty. Cost matters: the owner pays per token.
 
-What the review may do:
-1. **Vanished model** (in a preset or a list, absent from OpenRouter): replace it
-   with its direct successor - same vendor, same tier (pro -> pro, flash -> flash,
-   mini -> mini), the newest release of that line. Keep the preset's `presetId`,
-   update the name part of its `title` and its price marker. In endpoint lists,
-   put the successor where the old model was. If there is no clear successor,
-   remove it from lists and, for a preset, pick the closest model in price and
-   tier and say so plainly in the PR.
-2. **Newer version** of a model we use (same line, released later, e.g. Sonnet 5
-   -> Sonnet 5.1): propose the upgrade if its price is within +25%. Otherwise
-   mention it in the PR body only.
-3. **Price change** of a model we keep: update the marker in the title if the
-   marker changes.
+What the review does, in order:
+1. `scripts/check_models.py` compares `slots.yaml` and the endpoint lists with
+   the OpenRouter catalogue: vanished models, newer models per vendor, prices.
+2. For every slot, the newest model of the same line and category is the
+   candidate (GPT-5.2 -> GPT-5.6, Sonnet 5 -> Sonnet 5.1). A slot is filled only
+   from its own vendor; categories never mix (a Flash never replaces a Pro).
+3. **Quality gate.** The candidate and the current model of that slot get the
+   same standard test prompt from `tests/standard_prompt.md` (a short Russian
+   scientific-editing task). A judge - the current Claude flagship - compares
+   the two answers blind. Candidate worse -> the slot is NOT changed; the
+   verdict and both answers go to `docs/model-log.md` with the date, so the
+   reasoning is on record. Equal or better -> it goes into the pull request.
+   No answer, or not in Russian -> not in the pull request. A vanished model
+   has no current answer to compare with: its successor goes in without the
+   gate.
+4. Prices in `slots.yaml` are refreshed from the catalogue
+   (`check_models.py --update-prices`), `build_presets.py` regenerates the
+   titles.
+5. ONE pull request with a before -> after table (slot, old model, new model,
+   old price, new price, why). Label `dead-models-only` when every change only
+   replaces a model missing from OpenRouter: such a preset is already broken,
+   so the PR is merged and deployed at once. Anything else waits for the owner.
+6. A Telegram message with the link, sent by a plain `curl` from the workflow
+   (no Claude in that step). Silent when there is no pull request.
 
-What it must not do: add new presets beyond replacements, delete presets,
-change endpoint names or anything outside model ids, titles and model lists,
-touch `nginx/`, `certbot/`, compose files or scripts.
-
-Label `dead-models-only` means every change is of type 1. Such a PR is merged and
-deployed automatically, because the preset is already broken. Anything of type 2
-or 3 in the same PR -> no label -> waits for the owner.
-
-**Title format** `<colour> x<N> | <icon> <Name>`, e.g. `🟢 x4 | 🧠 Claude Sonnet 5`.
-Reconstructed from the presets as of 2026-09-22 (the owner may correct it):
-- `x<N>` is roughly the output price in USD per 1M tokens divided by 2.5, rounded;
-  the cheapest models are `x0`. Sonnet 5 (10/M) is x4, Opus 5 (25/M) is x10,
-  Fable 5.1 and GPT-6 Astra (50/M) are x20.
-- Colour: `⚪️` budget (about x0-x2), `🟢` middle (x2-x6), `🔴` expensive (x10+).
-- Icon: `⚡` fast and cheap, `🔥` strong non-flagship, `🧠` flagship reasoning.
-- If the price did not change, keep the existing marker as it is.
+Rules that bind whoever edits `slots.yaml`, human or Claude:
+- A newer model in the same slot replaces the old entry: same `presetId`, new
+  `id`, new `label`, new `out_per_m`. The replaced model leaves the endpoint
+  list too, unless another slot still uses it.
+- A vanished model (absent from OpenRouter) is replaced by its direct
+  successor: same vendor, same category, newest release of that line. No
+  successor -> the previous version of the line; a slot never stays empty
+  because of a vanished model.
+- Vendors: Claude, OpenAI, Grok, Gemini, Kimi, GLM stay. A new vendor is added
+  only after it won the quality gate against the model it would replace. A
+  vendor block may hold an empty category.
+- At most `max_models` presets in total. Beyond the cap a model replaces one,
+  it is not added next to it.
+- Never: delete or rename endpoints, touch `nginx/`, `certbot/`, compose files
+  or scripts, edit `presets.json` by hand.
 
 ## Server facts
 
@@ -157,7 +192,9 @@ Lessons already paid for - do not repeat:
 - root's authorized_keys: the deploy key with
   `command="/usr/local/sbin/poly-mind-apply",restrict`.
 - Repo secrets: `DEPLOY_SSH_KEY` (private half of that key),
-  `CLAUDE_CODE_OAUTH_TOKEN` (owner's Claude subscription, `claude setup-token`).
+  `CLAUDE_CODE_OAUTH_TOKEN` (owner's Claude subscription, `claude setup-token`),
+  `OPENROUTER_API_KEY` (for the quality gate), `TELEGRAM_BOT_TOKEN` and
+  `TELEGRAM_CHAT_ID` (the monthly message).
 - Actions may create pull requests (repo setting).
 
 ## Conventions
