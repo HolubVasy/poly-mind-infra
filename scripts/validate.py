@@ -122,6 +122,8 @@ def check_slots(endpoints: dict[str, dict]) -> None:
                     errors.append(f"{where}: id does not start with the vendor prefix {prefix!r}")
                 if m.get("line") and str(m["line"]) not in mid:
                     errors.append(f"{where}: line {m['line']!r} is not a part of the id")
+                if "rank" in m and not (isinstance(m["rank"], int) and m["rank"] >= 1):
+                    errors.append(f"{where}: rank must be a whole number from 1")
     cap = int(slots.get("max_models") or 0)
     if cap and len(seen) > cap:
         errors.append(f"slots.yaml: {len(seen)} models, the cap is max_models: {cap} - replace, do not add")

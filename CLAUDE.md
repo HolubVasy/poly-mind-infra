@@ -123,10 +123,12 @@ rounded; colour `⚪️` up to x1, `🟢` up to x7, `🔴` above (thresholds in
 `slots.yaml`).
 
 **Menu order**: LibreChat sorts presets by their `order` field, and
-`build_presets.py` assigns it - category top to bottom, then vendors in the
-order they are listed in `slots.yaml`, then the dearer model first when one
-vendor has two on a shelf. Every vendor sits in the same place on every shelf;
-the order moves only when the owner reorders the vendor list.
+`build_presets.py` assigns it - category top to bottom, then the owner's
+`rank` inside the category (1 = strongest, set in `slots.yaml` on the evidence
+in `docs/`: bench and long-context runs), then vendor order, then the dearer
+model first. As of 2026-09-23: Fable, Astra Pro; Grok, Opus, Terra; Luna,
+Flash. A new version inherits its slot's rank; the rank changes only on the
+owner's word.
 
 **The rule that broke the presets on 2026-09-22:** a preset's `model` must be in
 the `models.default` list of its `endpoint` in `librechat.yaml`. If it is not,
