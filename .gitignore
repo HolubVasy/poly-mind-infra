@@ -5,3 +5,4 @@
 # Server-side backups made by apply.sh.
 *.bak-*
 __pycache__/
+node_modules/

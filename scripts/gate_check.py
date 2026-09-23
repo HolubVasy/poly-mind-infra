@@ -13,7 +13,8 @@ Anything else is a problem and the change must not become a pull request.
 Helpers (procedure buttons) name a slot's `line`, so they move with it; the
 digest says which buttons moved. A replaced model's old label must be gone
 from docs/памятка.md - the helper «❓ Какую кнопку?» reads it and would
-otherwise send the mother to a button that no longer exists.
+otherwise send the mother to a button that no longer exists - and from
+scripts/memo_docx.js, which builds her Word памятка.
 
 Also prints one short Russian line per change (".digest" in the JSON) for
 the Telegram message: what was replaced, why, and what it costs now.
@@ -33,7 +34,9 @@ import yaml
 ROOT = Path(__file__).resolve().parent.parent
 SLOTS_PATH = ROOT / "models" / "slots.yaml"
 LOG_PATH = ROOT / "docs" / "model-log.md"
-MEMO_PATH = ROOT / "docs" / "памятка.md"
+# Both памятки name models by their labels: the .md (read by «❓ Какую
+# кнопку?») and the generator of the Word one she keeps.
+MEMO_PATHS = [ROOT / "docs" / "памятка.md", ROOT / "scripts" / "memo_docx.js"]
 
 ENTRY = re.compile(r"^## (\d{4}-\d{2}-\d{2}) · (.+?): `([^`]+)` vs `([^`]+)` -> \*\*(\w+)\*\*", re.M)
 VERDICT_RU = {"better": "судья: лучше", "equal": "судья: не хуже"}
@@ -104,7 +107,7 @@ def main() -> int:
     won = verdicts(today)
     slots_now = yaml.safe_load(SLOTS_PATH.read_text(encoding="utf-8"))
     helpers = slots_now.get("helpers") or []
-    memo = MEMO_PATH.read_text(encoding="utf-8") if MEMO_PATH.exists() else ""
+    memos = {p.relative_to(ROOT).as_posix(): p.read_text(encoding="utf-8") for p in MEMO_PATHS if p.exists()}
 
     digest, problems = [], []
     for pid, n in new.items():
@@ -126,8 +129,9 @@ def main() -> int:
             moved = [h["title"] for h in helpers if str(h.get("slot")) == n["line"]]
             if moved:
                 digest.append(f"   кнопки {', '.join(moved)} теперь тоже на {n['label']}")
-            if o["label"] != n["label"] and re.search(re.escape(o["label"]) + r"(?![\d.])", memo):
-                problems.append(f"docs/памятка.md still names {o['label']!r} - replace it with {n['label']!r}")
+            for where, memo in memos.items():
+                if o["label"] != n["label"] and re.search(re.escape(o["label"]) + r"(?![\d.])", memo):
+                    problems.append(f"{where} still names {o['label']!r} - replace it with {n['label']!r}")
         elif o["out_per_m"] != n["out_per_m"]:
             digest.append(f"{n['name']} ({n['label']}): цена {money(o['out_per_m'], n['out_per_m'])}")
     for pid, o in old.items():
