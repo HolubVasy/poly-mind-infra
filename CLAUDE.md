@@ -328,3 +328,13 @@ Lessons already paid for - do not repeat:
 Personal repository: short imperative commit messages, no ticket prefix, no AI
 attribution trailers. Every change goes through a pull request, including the
 ones Claude makes.
+
+Every non-draft PR gets a `Claude review` (workflow `claude-review.yml`,
+uses `CLAUDE_CODE_OAUTH_TOKEN`). It looks for bugs only - the live chat
+breaking, secrets leaking, money running away, code not doing what the PR
+says - and posts one inline comment per bug plus a one-line verdict; no
+style or polishing notes (owner, 2026-09-23). It never blocks by itself,
+so whoever merges, Claude included, waits for the verdict and fixes or
+answers every bug before merging. The monthly model-check PR is opened with
+`GITHUB_TOKEN`, which starts no workflows, so it gets no review - the owner
+reads that one.
