@@ -10,11 +10,10 @@ x<N> is the output price divided by price_unit, rounded; the colour follows N.
 Nobody types a price marker: check_models.py refreshes out_per_m from
 OpenRouter, this script turns it into the title.
 
-The menu order is the `order` field LibreChat sorts by (owner's rule,
-2026-09-22): category (top to bottom as in slots.yaml), then vendor in the
-order the vendors are listed in slots.yaml, then - only when one vendor has
-two models on one shelf - the dearer one first. The order changes only when
-the owner changes the vendor list, never when a version or a price does.
+The menu order is the `order` field LibreChat sorts by: category (top to
+bottom as in slots.yaml), then the owner's `rank` inside the category
+(1 = strongest, decided on the evidence in docs/), then vendor order, then
+the dearer one first. A new version inherits its slot's rank.
 
 Usage: python scripts/build_presets.py           # writes presets/presets.json
        python scripts/build_presets.py --check   # exit 1 if the file is stale
@@ -61,12 +60,16 @@ def title_for(vendor: dict, category: str, model: dict, slots: dict) -> str:
 
 
 def iter_models(slots: dict):
-    """Menu order: category, then vendor as listed, then dearer first."""
+    """Menu order: category, then the owner's rank (1 = strongest), then vendor
+    as listed, then dearer first."""
     for category in slots["categories"]:
-        for vendor in slots["vendors"]:
-            models = sorted(vendor.get(category) or [], key=lambda m: -float(m["out_per_m"]))
-            for model in models:
-                yield vendor, category, model
+        rows = []
+        for vi, vendor in enumerate(slots["vendors"]):
+            for model in vendor.get(category) or []:
+                rows.append((model.get("rank", 10 ** 6), vi, -float(model["out_per_m"]), vendor, model))
+        rows.sort(key=lambda r: r[:3])
+        for _rank, _vi, _price, vendor, model in rows:
+            yield vendor, category, model
 
 
 def build(slots: dict) -> dict:
