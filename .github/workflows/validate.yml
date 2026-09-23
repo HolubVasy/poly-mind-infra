@@ -35,4 +35,4 @@ jobs:
           bash -n certbot/renewal-hooks/post/start-nginx.sh
           node --check scripts/apply_presets.js
           node --check scripts/memo_docx.js
-          python -m py_compile scripts/validate.py scripts/check_models.py scripts/build_presets.py scripts/judge.py scripts/gate_check.py scripts/bench.py scripts/longctx.py scripts/balance_check.py
+          python -m py_compile scripts/validate.py scripts/check_models.py scripts/build_presets.py scripts/judge.py scripts/gate_check.py scripts/bench.py scripts/longctx.py scripts/balance_check.py scripts/strength_check.py

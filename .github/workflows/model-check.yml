@@ -11,7 +11,10 @@
 # 3. scripts/gate_check.py verifies the branch: every replaced model either
 #    vanished from OpenRouter or won its verdict today. A branch that fails
 #    is closed, never merged.
-# 4. A plain curl sends the Telegram message. Silent when there is no PR.
+# 4. scripts/strength_check.py runs the old and the new model of every
+#    replaced slot on one ~100k-token manuscript: a signal for the owner,
+#    never a block, capped at $5 by its own estimate.
+# 5. A plain curl sends the Telegram message. Silent when there is no PR.
 #
 # dry_run (manual): step 1 and the diff only; no Claude, no PR, no message.
 # Pull requests opened with GITHUB_TOKEN do not trigger the Validate workflow,
@@ -153,6 +156,21 @@ jobs:
           echo "outcome=open" >> "$GITHUB_OUTPUT"
           echo "PR #$number waits for the owner: $url" >> "$GITHUB_STEP_SUMMARY"
 
+      # A signal, not a gate: old and new model on the same ~100k-token
+      # manuscript (where Fable used to stall). Only when a model is replaced;
+      # skipped above $5 by its own estimate. Result goes to the PR and Telegram.
+      - name: Long text signal
+        if: ${{ !inputs.dry_run && steps.pr.outputs.outcome == 'open' }}
+        continue-on-error: true
+        timeout-minutes: 20
+        env:
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          PR_NUMBER: ${{ steps.pr.outputs.number }}
+        run: |
+          python scripts/strength_check.py --base origin/main --cap 5 --json /tmp/strength.json | tee -a "$GITHUB_STEP_SUMMARY"
+          comment=$(jq -r '.comment // ""' /tmp/strength.json)
+          [ -n "$comment" ] && gh pr comment "$PR_NUMBER" --body "$comment" || true
+
       - name: Telegram
         if: ${{ always() && !inputs.dry_run }}
         env:
@@ -171,6 +189,7 @@ jobs:
           # (what was replaced, why, and what it costs now).
           digest=""
           [ -s /tmp/gate.json ] && digest=$(jq -r '.digest[]? | "• " + .' /tmp/gate.json)
+          [ -s /tmp/strength.json ] && digest=$(printf '%s\n%s' "$digest" "$(jq -r '.lines[]? | "• " + .' /tmp/strength.json)")
           case "$OUTCOME:$JOB_STATUS" in
             open:*)       text=$(printf '🗳 Модели чата: PR #%s ждёт тебя.\n%s\n\nПочему так решено и ответы моделей - в PR: %s' "$PR_NUMBER" "$digest" "$PR_URL") ;;
             none:success) echo "No PR, nothing to say." >> "$GITHUB_STEP_SUMMARY"; exit 0 ;;

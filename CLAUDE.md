@@ -44,6 +44,7 @@ Not in this repository, on purpose:
 | `docs/model-log.md` | - | Every verdict with both answers; written by `judge.py` only |
 | `docs/памятка.md` | MongoDB, inside the ❓ preset | THE памятка, one source of truth. «❓ Какую кнопку?» reads it; the .docx is built from it; its menu table is generated |
 | `docs/памятка.docx` | - | The mother's Word памятка. Rebuilt from the .md by the `Memo` workflow after every merge, do not edit |
+| `scripts/strength_check.py` | - | Long-text signal on a replacement: old vs new on a ~100k manuscript, capped at $5 |
 | `scripts/balance_check.py` | - | One Telegram message when the OpenRouter balance falls below $1 (workflow `Balance`, daily 06:00 UTC) |
 | `scripts/memo_docx.js` | - | Converts `docs/памятка.md` to `docs/памятка.docx` (`npm ci` first); `--check` says whether the .docx is current |
 
@@ -175,7 +176,15 @@ one if it passes the judge.** In order:
    added model either vanished from OpenRouter or has a winning verdict
    dated today, otherwise the workflow closes the PR. It also writes one
    Russian line per change for the message.
-4. Telegram by a plain `curl`: the link plus those lines. Silent when there
+4. **Long text signal** - `scripts/strength_check.py`: when a model is
+   replaced, the old and the new one read the same ~100k-token manuscript
+   from `longctx.py` (seed 7, 8 planted contradictions; the size where Fable
+   stalls). Found / invented for both go to a PR comment and the Telegram
+   message, with "⚠️ хуже" when the new one scores lower. It never blocks:
+   the owner decides and moves `rank` if the strength changed (owner,
+   2026-09-23). Cost is estimated first with a pessimistic tokenizer and the
+   run is skipped above $5 (an Opus pair is about $2, a Fable pair about $5).
+5. Telegram by a plain `curl`: the link plus those lines. Silent when there
    is no PR; a failed run does send a message.
 
 Dry run: Actions -> Model check -> Run workflow -> dry_run. Report and price
