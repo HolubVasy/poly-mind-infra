@@ -41,7 +41,9 @@ ROOT = Path(__file__).resolve().parent.parent
 SLOTS_PATH = ROOT / "models" / "slots.yaml"
 API_URL = "https://openrouter.ai/api/v1/chat/completions"
 TIMEOUT = 900
-MAX_TOKENS = 16000
+# 32000: at 16000 Sonnet, GLM, Kimi and MiniMax returned an empty answer on
+# the 50k manuscript (2026-09-23).
+MAX_TOKENS = 32000
 CHARS_PER_TOKEN = 2.6  # rough for Russian scientific text; real counts come from usage
 
 # canonical parameter -> (how it is written, unit, generator, formatter)
@@ -202,7 +204,11 @@ def ask(model: str, content: str, key: str) -> tuple[str, dict]:
     choices = data.get("choices") or []
     if not choices:
         raise RuntimeError(f"empty choices: {json.dumps(data)[:200]}")
-    return (choices[0].get("message") or {}).get("content") or "", data.get("usage") or {}
+    usage = dict(data.get("usage") or {})
+    # Why the answer ended: "length" means the budget ran out (reasoning models
+    # can spend all of it thinking and return nothing).
+    usage["finish_reason"] = choices[0].get("finish_reason")
+    return (choices[0].get("message") or {}).get("content") or "", usage
 
 
 def canon_param(text: str) -> str | None:
@@ -299,7 +305,9 @@ def main() -> int:
         for (n, m), res in ex.map(run, jobs):
             results[(n, m["id"])] = res
             g = res["grade"]
+            u = res["usage"]
             print(f"  {n:>7} {m['id']:32} found {g['found']}/{len(docs[n][1])} false {g['false']}"
+                  f" stop={u.get('finish_reason')} out={u.get('completion_tokens')}"
                   f"{' ERROR ' + res['error'] if res['error'] else ''}", file=sys.stderr)
 
     cost = sum(float(r["usage"].get("cost") or 0) for r in results.values())
@@ -315,13 +323,14 @@ def main() -> int:
         real = [results[(n, m["id"])]["usage"].get("prompt_tokens") for m in models]
         real = [x for x in real if x]
         lines += [f"## ~{n // 1000} тыс. токенов ({min(real) if real else '?'}-{max(real) if real else '?'} по счёту моделей)", "",
-                  "| # | Модель | Нашла | Выдумала | F1 | Секунд |", "|---|---|---|---|---|---|"]
+                  "| # | Модель | Нашла | Выдумала | F1 | Секунд | Конец ответа |", "|---|---|---|---|---|---|---|"]
         ranked = sorted(models, key=lambda m: -results[(n, m["id"])]["grade"]["f1"])
         for i, m in enumerate(ranked, 1):
             r = results[(n, m["id"])]
             g = r["grade"]
             note = " (ошибка вызова)" if r["error"] else ("" if g["parsed"] else " (ответ не JSON)")
-            lines.append(f"| {i} | {m['label']}{note} | {g['found']}/{len(plants)} | {g['false']} | {g['f1']:.2f} | {r['seconds']} |")
+            stop = r["usage"].get("finish_reason") or "-"
+            lines.append(f"| {i} | {m['label']}{note} | {g['found']}/{len(plants)} | {g['false']} | {g['f1']:.2f} | {r['seconds']} | {stop} |")
         lines += ["", "Ключ:", ""] + [f"- {p['sample']}, {p['param']}: {p['true']} и {p['wrong']} ({p['where']})" for p in plants] + [""]
     lines += ["## Ответы", ""]
     for n in sizes:
