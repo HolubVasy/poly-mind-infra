@@ -80,9 +80,19 @@ def with_common(slots: dict, text: str) -> str:
     return (common + "\n\n" + text).strip() if common else text.strip()
 
 
+def slot_model(slots: dict, line: str) -> dict:
+    """The model a helper runs on: the one slot whose `line` is `line`.
+    Helpers name a slot, not an id, so a monthly replacement moves them too."""
+    found = [m for _v, _c, m in iter_models(slots) if str(m["line"]) == str(line)]
+    if len(found) != 1:
+        raise SystemExit(f"ERROR: helper slot {line!r} matches {len(found)} model slots, needs exactly one")
+    return found[0]
+
+
 def helper_presets(slots: dict) -> list[dict]:
     """Buttons with a procedure instead of a model choice: a model and
-    instructions baked in, so the rule lives in the button."""
+    instructions baked in, so the rule lives in the button. The model is
+    whatever the named slot holds today."""
     out = []
     for i, h in enumerate(slots.get("helpers") or []):
         text = (h.get("instructions") or "").strip()
@@ -91,7 +101,7 @@ def helper_presets(slots: dict) -> list[dict]:
         out.append({
             "presetId": h["presetId"],
             "endpoint": slots["endpoint"],
-            "model": h["model"],
+            "model": slot_model(slots, h["slot"])["id"],
             "title": h["title"],
             "promptPrefix": with_common(slots, (h.get("intro", "").strip() + "\n\n" + text).strip()),
             "order": -len(slots["helpers"]) + i,
