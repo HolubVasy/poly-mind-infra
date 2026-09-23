@@ -64,7 +64,10 @@ jobs:
             drop it if the code already handles the case.
 
             Each bug as an inline comment on its line: the situation, what
-            goes wrong, the fix - three sentences at most. Then one top-level
+            goes wrong, the fix - three sentences at most. Call
+            create_inline_comment exactly once per bug, with the parameter
+            confirmed set to true (a parameter, never words in the body);
+            a comment it reports as posted is posted - do not repeat it. Then one top-level
             comment (`gh pr comment`): "Багов не нашёл." if there are none,
             otherwise the number of bugs and "не мёржить до правки" or
             "можно мёржить, баги мелкие" with one sentence why. No praise,
