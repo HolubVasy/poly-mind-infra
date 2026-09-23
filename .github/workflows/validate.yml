@@ -1,38 +1,79 @@
-# Static checks on every pull request. The same scripts/validate.py runs again
-# on the server before apply.sh touches anything.
+# Static checks. On a pull request they run as the `checks` job of Claude
+# review (workflow_call), which hands the one-line result to the reviewer; on
+# main they run on their own. The same scripts/validate.py runs again on the
+# server before apply.sh touches anything.
 name: Validate
 
 on:
-  pull_request:
   push:
     branches: [main]
+  workflow_call:
+    outputs:
+      result:
+        description: One line per check plus the tail of any failure, for the review prompt
+        value: ${{ jobs.validate.outputs.result }}
 
 jobs:
   validate:
     runs-on: ubuntu-latest
+    outputs:
+      result: ${{ steps.summary.outputs.result }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
       - run: pip install -q pyyaml
-      - name: Config and presets are consistent
-        run: python scripts/validate.py
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
       - run: npm ci --no-audit --no-fund
+
+      - name: Config and presets are consistent
+        id: config
+        continue-on-error: true
+        run: |
+          python scripts/validate.py 2>&1 | tee -a checks.txt
+          exit ${PIPESTATUS[0]}
+
       - name: The Word памятка builds from the .md
+        id: memo
         # Only that it builds: the .docx itself is rebuilt and committed by
         # the Memo workflow after the merge, so a PR that edits the .md on
         # GitHub needs no local rebuild.
-        run: node scripts/memo_docx.js
-      - name: Scripts parse
+        continue-on-error: true
         run: |
-          bash -n scripts/apply.sh
-          bash -n scripts/remote-entry.sh
-          bash -n certbot/renewal-hooks/pre/stop-nginx.sh
-          bash -n certbot/renewal-hooks/post/start-nginx.sh
-          node --check scripts/apply_presets.js
-          node --check scripts/memo_docx.js
-          python -m py_compile scripts/validate.py scripts/check_models.py scripts/build_presets.py scripts/judge.py scripts/gate_check.py scripts/bench.py scripts/longctx.py scripts/balance_check.py scripts/strength_check.py
+          node scripts/memo_docx.js 2>&1 | tee -a checks.txt
+          exit ${PIPESTATUS[0]}
+
+      - name: Scripts parse
+        id: parse
+        continue-on-error: true
+        run: |
+          {
+            bash -n scripts/apply.sh &&
+            bash -n scripts/remote-entry.sh &&
+            bash -n certbot/renewal-hooks/pre/stop-nginx.sh &&
+            bash -n certbot/renewal-hooks/post/start-nginx.sh &&
+            node --check scripts/apply_presets.js &&
+            node --check scripts/memo_docx.js &&
+            python -m py_compile scripts/validate.py scripts/check_models.py scripts/build_presets.py scripts/judge.py scripts/gate_check.py scripts/bench.py scripts/longctx.py scripts/balance_check.py scripts/strength_check.py
+          } 2>&1 | tee -a checks.txt
+          exit ${PIPESTATUS[0]}
+
+      - name: Summary for the review
+        id: summary
+        if: always()
+        run: |
+          {
+            echo "result<<EOF"
+            echo "validate.py: ${{ steps.config.outcome }}; памятка build: ${{ steps.memo.outcome }}; scripts parse: ${{ steps.parse.outcome }}"
+            if [ "${{ steps.config.outcome }}${{ steps.memo.outcome }}${{ steps.parse.outcome }}" != "successsuccesssuccess" ]; then
+              tail -25 checks.txt 2>/dev/null || true
+            fi
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Fail on a red check
+        if: steps.config.outcome != 'success' || steps.memo.outcome != 'success' || steps.parse.outcome != 'success'
+        run: exit 1

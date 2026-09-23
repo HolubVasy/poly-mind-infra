@@ -51,7 +51,8 @@ Not in this repository, on purpose:
 
 ## How a change reaches the server
 
-1. Pull request. `Validate` runs `scripts/validate.py` and syntax checks.
+1. Pull request. `Claude review` runs `Validate` (`scripts/validate.py` and
+   syntax checks) as its `checks` job, then reviews the diff (see Conventions).
 2. Merge to `main`. `Deploy` connects with `DEPLOY_SSH_KEY`; the server's
    authorized_keys forces that key to run `/usr/local/sbin/poly-mind-apply`,
    which resets `/opt/poly-mind-infra` to `origin/main` and runs `scripts/apply.sh`.
@@ -329,9 +330,18 @@ Personal repository: short imperative commit messages, no ticket prefix, no AI
 attribution trailers. Every change goes through a pull request, including the
 ones Claude makes.
 
+The process follows the owner's Notion page «Процесс: требования в git, ревью
+с Claude» (2026-09-23), the same one job-search uses. In one line: Notion is
+status and intent, git is the detail and the instructions.
+
 Where things are written (owner, 2026-09-23):
 - **Notion** - plans, constraints, idea drafts, and results after a merge.
-  A journal for people; CI never reads it and holds no Notion token.
+  The table «Изменения» on the Self-Hosted Infrastructure page holds one row
+  per change: status, the PR, and «Принято ✅» only after a live check, with
+  the evidence. The row links the requirements in git, never copies them. It
+  is a manual journal: Claude updates it at the end of a session, nothing
+  automatic touches it, and where it disagrees with GitHub, GitHub is right.
+  CI never reads Notion and holds no Notion token.
 - **Git** - the concrete requirements. A small change is described in the
   PR itself, by `.github/pull_request_template.md` (зачем, что меняется, как
   проверено, риск). A big one - more than one file of logic, paid calls, the
@@ -342,16 +352,63 @@ Where things are written (owner, 2026-09-23):
   into work its requirements move to git, and Notion keeps a line with the
   link and later the result.
 
+Who decides what (owner, 2026-09-23) - who decides, answers for it:
+- **Owner** - what and in which order, and the risks: goals, priorities,
+  secrets, DNS, money, codes from SMS.
+- **Claude** - how, and the evidence: requirements in git before code, an
+  honest report with numbers, the Notion journal, fixing confirmed bugs.
+- **Review bot** - decides nothing; answers for findings with a scenario.
+- **CI** - decides nothing; answers for the fact, green or red.
+
+Claude's red lines: nothing outside git (server, database, config - only a
+PR and the deploy); a merge only after the review verdict; money only within
+the agreed cap, anything new and paid gets a price before it runs; secrets
+are never written or repeated in chat; security and account risks are never
+accepted on the owner's behalf.
+
+Three autonomy baskets (revised when trust changes, and written here):
+- **Silently** - design, code, checks, PRs, fixes after review, what to do
+  with a PLAUSIBLE finding (the reason written in the PR), Notion rows.
+- **Do and report** - a merge after a green verdict and the deploy it
+  triggers, changing how the review works.
+- **Ask first** - security and account risks, money over the cap, domains and
+  DNS, what goes into a spec, a dispute after the third review round, paid
+  experiments, anything the mother will notice (a forced re-login, downtime,
+  a changed menu).
+
+One change: a row in «Изменения» -> requirements in git (the PR template, a
+spec for a big task) -> PR -> review -> fix, at most three rounds -> merge
+-> live check -> «Принято ✅» with the evidence.
+
 Every non-draft PR gets a `Claude review` (`claude-review.yml`, uses
-`CLAUDE_CODE_OAUTH_TOKEN`). Bugs only - the live chat breaking, secrets
-leaking, money running away, the code not doing what the description or the
-linked spec says (a missed spec requirement counts) - one inline comment per
-bug and one verdict comment, «Круг N/3.» plus «Багов не нашёл.», «можно
-мёржить, баги мелкие» or «не мёржить до правки»; no style or polishing notes.
-The loop is review -> fix -> review, at most three rounds per PR, counted by
-the verdict comments; after the third the workflow posts «Лимит ревью» and
-stops, and the owner decides. «не мёржить» turns the check red. The free
-private plan has no required checks, so red is the only lock: nobody,
-Claude included, merges a PR with a red review or before its verdict. The
+`CLAUDE_CODE_OAUTH_TOKEN`). Four steps:
+1. `checks` - `validate.yml` called as a reusable workflow; its one-line
+   result goes into the review prompt, and a red check is the first finding.
+   On a PR this is the only run of `Validate`; on main it runs on its own.
+2. Review - bugs only: the live chat breaking, secrets leaking, money running
+   away, a gap between the code and the description or the linked spec (a
+   missed spec requirement counts). A finding is posted only with a concrete
+   scenario (state, file:line, wrong result); no style or polishing notes.
+   One inline comment per finding and one summary whose first line is
+   `REVIEW <sha7>: N finding(s)`.
+3. Verify - only when N > 0: a second run re-reads the findings for the same
+   commit and posts `VERIFIED <sha7>: C confirmed, P plausible, R rejected`.
+4. Verdict - red when there is no REVIEW line, when findings have no VERIFIED
+   line, or when C > 0. PLAUSIBLE and REJECTED do not block; Claude answers
+   each PLAUSIBLE one in the PR - fixed or why not.
+
+A round is a push after a REVIEW with findings; a push after «0 findings» is
+not a round. Stop when confirmed bugs are 0. After the third round the
+workflow posts «Лимит ревью», reviews no more, keeps the last state (red if
+bugs were not cleared), and the owner decides: false alarm, or cut the task.
+The free private plan has no required checks, so red is the only lock:
+nobody, Claude included, merges a PR with a red review or before its verdict.
+Cost: one Claude run per push, two when there are findings, a few minutes of
+the subscription quota each.
+
+A PR that changes `claude-review.yml` is reviewed by its own new version
+(`pull_request` runs the workflow from the PR head, and the action gets
+`github_token`, so it does not insist on the file matching main - seen on
+#45 and #47). Its description still lists what was checked by hand. The
 monthly model-check PR is opened with `GITHUB_TOKEN`, which starts no
-workflows, so it gets no review - the owner reads that one.
+workflows, so it gets no checks and no review - the owner reads that one.
