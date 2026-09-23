@@ -186,6 +186,11 @@ Rules for whoever edits `slots.yaml`, human or Claude:
 - A newer model replaces the old entry in place: same `presetId`, new `id`,
   `label`, `out_per_m`; `line` stays. The replaced id leaves the "Все" list
   unless another slot or endpoint still uses it.
+- Helpers are not edited: they follow their slot. The old label is replaced
+  by the new one in `docs/памятка.md`; `gate_check.py` fails the branch while
+  the old label is still there, and its digest names the buttons that moved
+  (added 2026-09-23 - before that the buttons stayed on hard-coded ids and a
+  replaced or vanished model would have left them behind).
 - Categories, vendors, the vendor order and empty shelves are the owner's
   decisions. Claude never moves a model between categories, never fills a
   shelf, never adds a vendor. A new line (a new word in a vendor's ids) is
@@ -222,9 +227,13 @@ digest first). Keep it in step with the menu. It is also the instruction
 text of the helper preset «❓ Какую кнопку?» (`helpers:` in `slots.yaml`):
 `build_presets.py` copies the file into the preset's `promptPrefix`, so the
 rules have one home and a merged edit of the памятка updates the button.
-Four more helpers are procedure buttons with inline `instructions` and a
-model baked in: 🧭 Новый вопрос (Opus 5.5), ✏️ Править текст (Fable 5.1),
-🔍 Рецензия (Astra Pro), 🎛 Варианты (Opus 5.5). Every preset, model buttons
+Four more helpers are procedure buttons with inline `instructions`:
+🧭 Новый вопрос and 🎛 Варианты on the `opus` slot, ✏️ Править текст on
+`fable`, 🔍 Рецензия on `astra-pro`; ❓ runs on `luna-pro`. A helper names
+its model by a slot's `line` (`slot: opus`), never by id: `build_presets.py`
+puts in whatever that slot holds today, so the monthly refresh moves the
+buttons with the slot. `validate.py` rejects a helper with a `model:` id, a
+`slot` that is no slot's line, and a line used by two slots. Every preset, model buttons
 included, starts with `common_prefix` from `slots.yaml` - the owner's line
 «Ничего не додумывай… Не знаешь - так и скажи» - because inventing and
 guessing were the two failure modes the tests showed.

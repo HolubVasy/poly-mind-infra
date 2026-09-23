@@ -104,7 +104,12 @@ jobs:
                every new id to the "Все" list in librechat/librechat.yaml and
                remove the replaced id from that list unless another slot or
                another endpoint still uses it. Keep the first model of the
-               list unchanged.
+               list unchanged. Do not touch `helpers:` - each names a slot
+               by its `line` and follows the new model by itself.
+               Replace the old label with the new one everywhere in
+               docs/памятка.md (e.g. "Opus 5.5" -> "Opus 6"); the helper
+               «❓ Какую кнопку?» reads that file, and gate_check.py fails
+               while the old label is still there.
             5. Run, and fix until all pass:
                python scripts/build_presets.py
                python scripts/validate.py
@@ -116,8 +121,9 @@ jobs:
                open ONE pull request against main with `gh pr create`. The
                body must have a before -> after table (slot, old model, new
                model, old price, new price, why - the judge's reason, or
-               "vanished from OpenRouter", or "price"), the list of missing
-               models, and the candidates that lost, one line each.
+               "vanished from OpenRouter", or "price"), the procedure buttons
+               that moved with a slot (gate_check.py prints them), the list
+               of missing models, and the candidates that lost, one line each.
           claude_args: '--allowed-tools "Read,Edit,Write,Glob,Grep,Bash(git:*),Bash(python scripts/*),Bash(gh pr create:*),Bash(gh pr view:*)"'
 
       - name: Gate the pull request

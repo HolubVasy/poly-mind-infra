@@ -124,24 +124,34 @@ def check_slots(endpoints: dict[str, dict]) -> None:
                     errors.append(f"{where}: line {m['line']!r} is not a part of the id")
                 if "rank" in m and not (isinstance(m["rank"], int) and m["rank"] >= 1):
                     errors.append(f"{where}: rank must be a whole number from 1")
+    lines = [str(m.get("line")) for v in slots.get("vendors") or [] for c in categories for m in v.get(c) or []]
+    for dup in sorted({x for x in lines if lines.count(x) > 1}):
+        errors.append(f"slots.yaml: line {dup!r} is used by more than one slot - helpers could not tell them apart")
     for h in slots.get("helpers") or []:
         where = f"slots.yaml helper {h.get('title')!r}"
-        for field in ("presetId", "title", "model"):
+        for field in ("presetId", "title", "slot"):
             if not h.get(field):
                 errors.append(f"{where}: missing {field}")
+        if "model" in h:
+            errors.append(f"{where}: names a model id - use `slot: <line>` so the monthly refresh moves the button too")
+        if h.get("slot") and str(h["slot"]) not in lines:
+            errors.append(f"{where}: slot {h['slot']!r} is not the line of any model slot")
         if not (h.get("instructions") or h.get("instructions_file")):
             errors.append(f"{where}: needs instructions or instructions_file")
         if h.get("presetId") in seen:
             errors.append(f"{where}: presetId used twice")
-        if h.get("model") not in listed:
-            errors.append(f"{where}: model {h.get('model')!r} is not in the models.default list of {endpoint!r}")
         if h.get("instructions_file") and not (ROOT / h["instructions_file"]).exists():
             errors.append(f"{where}: {h['instructions_file']} does not exist")
     cap = int(slots.get("max_models") or 0)
     if cap and len(seen) > cap:
         errors.append(f"slots.yaml: {len(seen)} models, the cap is max_models: {cap} - replace, do not add")
     import build_presets
-    if build_presets.render(build_presets.build(slots)) != PRESETS_PATH.read_text(encoding="utf-8"):
+    try:
+        generated = build_presets.render(build_presets.build(slots))
+    except SystemExit as e:
+        errors.append(f"build_presets.py cannot build from slots.yaml: {e}")
+        return
+    if generated != PRESETS_PATH.read_text(encoding="utf-8"):
         errors.append("presets.json is not what slots.yaml generates - edit slots.yaml, run scripts/build_presets.py")
 
 
