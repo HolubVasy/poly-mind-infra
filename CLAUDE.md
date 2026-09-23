@@ -98,7 +98,7 @@ and nothing is added to fill a grid. Iteration 1, approved by the owner on
 
 | | flagship | workhorse | cheap |
 |---|---|---|---|
-| Claude | Fable 5.1 | Sonnet 5 | - |
+| Claude | Fable 5.1 | Opus 5.5, Sonnet 5 | - |
 | OpenAI | GPT-6 Astra Pro | GPT-5.6 Terra Pro | GPT-6 Luna Pro |
 | Gemini | - | - | Gemini 3.8 Flash |
 | Grok | - | Grok 4.7 | - |

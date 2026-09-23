@@ -55,6 +55,7 @@ vendors:
     flagship:
       - { id: anthropic/claude-fable-5.1, presetId: b8d5531b-257e-4869-ada5-3c96cfae7b2b, label: "Fable 5.1", line: fable,  out_per_m: 50.0 }
     workhorse:
+      - { id: anthropic/claude-opus-5.5,  presetId: 794f02de-4ec5-49c2-84af-600994a2a41d, label: "Opus 5.5",  line: opus,   out_per_m: 20.0 }
       - { id: anthropic/claude-sonnet-5,  presetId: 0f7adf43-3c73-49a4-b6c4-934e9a5e9e12, label: "Sonnet 5",  line: sonnet, out_per_m: 10.0 }
     cheap: []
 
