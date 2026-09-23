@@ -2,101 +2,14 @@ version: 1.1.5
 
 cache: true
 
+# One endpoint. The menu is the presets (models/slots.yaml -> presets.json);
+# this list is exactly the models the presets use, nothing else. The first
+# model is the silent fallback for a preset whose model is missing - keep it
+# a model we trust. Endpoint-level fetch: and modelOptions: are not in
+# LibreChat's custom-endpoint schema and were removed (2026-09-23), together
+# with the seven old task endpoints nobody had used since March.
 endpoints:
   custom:
-    - name: "Методика наночастиц (Gemini MAX)"
-      apiKey: "${OPENROUTER_API_KEY}"
-      baseURL: "https://openrouter.ai/api/v1"
-      models:
-        default: [
-          "google/gemini-2.5-pro",
-          "google/gemini-3-flash-preview",
-          "google/gemini-2.5-flash"
-        ]
-      modelOptions:
-        max_tokens: 8192
-        maxTokens: 8192
-      fetch: false
-      modelDisplayLabel: "Методика (Gemini)"
-
-    - name: "Методика наночастиц (GPT MAX)"
-      apiKey: "${OPENROUTER_API_KEY}"
-      baseURL: "https://openrouter.ai/api/v1"
-      models:
-        default:
-          - "openai/gpt-5.2"
-      fetch: false
-      modelDisplayLabel: "Методика (GPT)"
-
-    - name: "Поиск источников (обзор)"
-      apiKey: "${OPENROUTER_API_KEY}"
-      baseURL: "https://openrouter.ai/api/v1"
-      models:
-        default: [
-          "google/gemini-2.5-pro",
-          "openai/gpt-5.1",
-          "openai/gpt-5.2-chat",
-          "google/gemini-3-flash-preview",
-          "google/gemini-2.5-flash"
-        ]
-      modelOptions:
-        max_tokens: 8192
-        maxTokens: 8192
-      fetch: false
-      modelDisplayLabel: "Источники"
-
-    - name: "Редактор статьи GPT (строго)"
-      apiKey: "${OPENROUTER_API_KEY}"
-      baseURL: "https://openrouter.ai/api/v1"
-      models:
-        default: [
-          "openai/gpt-5.2"
-        ]
-      fetch: false
-      modelDisplayLabel: "Редактор GPT"
-
-    - name: "Редактор статьи Sonet (строго)"
-      apiKey: "${OPENROUTER_API_KEY}"
-      baseURL: "https://openrouter.ai/api/v1"
-      models:
-        default: [
-          "anthropic/claude-opus-4.1"
-        ]
-      modelOptions:
-        max_tokens: 8192
-        maxTokens: 8192
-      fetch: false
-      modelDisplayLabel: "Редактор Sonet"
-
-    - name: "Редактор статьи Gemini (строго)"
-      apiKey: "${OPENROUTER_API_KEY}"
-      baseURL: "https://openrouter.ai/api/v1"
-      models:
-        default: [
-          "google/gemini-2.5-pro",
-          "google/gemini-3-flash-preview",
-        ]
-      modelOptions:
-        max_tokens: 8192
-        maxTokens: 8192
-      fetch: false
-      modelDisplayLabel: "Редактор Gemini"
-
-    - name: "Редактор статьи (супер дорого)"
-      apiKey: "${OPENROUTER_API_KEY}"
-      baseURL: "https://openrouter.ai/api/v1"
-      models:
-        default: [
-          "openai/gpt-5.2-pro",
-          "google/gemini-2.5-pro",
-          "anthropic/claude-opus-4.6"
-        ]
-      modelOptions:
-        max_tokens: 2048
-        maxTokens: 2048
-      fetch: false
-      modelDisplayLabel: "Редактор супер"
-
     - name: "Все"
       apiKey: "${OPENROUTER_API_KEY}"
       baseURL: "https://openrouter.ai/api/v1"
@@ -107,15 +20,7 @@ endpoints:
           "openai/gpt-6-astra-pro",
           "openai/gpt-5.6-terra-pro",
           "openai/gpt-6-luna-pro",
-          "openai/gpt-5.2",
-          "openai/gpt-5-mini",
-          "x-ai/grok-4.7",
-          "x-ai/grok-4.5",
           "google/gemini-3.8-flash",
-          "google/gemini-2.5-pro"
+          "x-ai/grok-4.7"
         ]
-      modelOptions:
-        max_tokens: 2048
-        maxTokens: 2048
-      fetch: true
-      modelDisplayLabel: "Редактор супер"
+      modelDisplayLabel: "Чат"

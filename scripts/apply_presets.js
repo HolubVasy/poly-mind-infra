@@ -60,6 +60,12 @@ if (dry) {
 
 const backupName = `presets_backup_${tag}`;
 if (current.length) db.getCollection(backupName).insertMany(current);
+// Keep the three newest backups; older ones are clutter (one per deploy).
+const backups = db.getCollectionNames().filter((n) => n.startsWith("presets_backup_")).sort();
+for (const old of backups.slice(0, Math.max(0, backups.length - 3))) {
+  db.getCollection(old).drop();
+  print(`[presets] dropped old backup ${old}`);
+}
 print(`[presets] backup: ${current.length} preset(s) -> ${backupName}`);
 
 const now = new Date();

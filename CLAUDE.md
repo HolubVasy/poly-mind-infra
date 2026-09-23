@@ -208,10 +208,13 @@ Rules for whoever edits `slots.yaml`, human or Claude:
 - Registration is closed (`ALLOW_REGISTRATION=false` in `.env`); strangers had
   signed up through `/api`, which is outside basic auth.
 
-`librechat.yaml` keys LibreChat ignores on a custom endpoint: endpoint-level
-`fetch:` and `modelOptions:` (its schema knows only `addParams` / `dropParams`).
-So the `max_tokens: 2048` there caps nothing - the chat log shows answers of
-10k (Fable) and 31k (Opus) completion tokens. Checked 2026-09-23.
+`librechat.yaml` has one endpoint, "Все", whose list is exactly the models the
+presets use. The seven old task endpoints («Методика наночастиц», «Редактор
+статьи ...») were removed on 2026-09-23 - the log showed one of them used
+last in March, the rest never. `fetch:` and `modelOptions:` were removed too:
+LibreChat ignores both on a custom endpoint (its schema has only `addParams` /
+`dropParams`; the log shows 10k-31k token answers despite `max_tokens: 2048`).
+`apply_presets.js` keeps the three newest `presets_backup_*` collections.
 
 `docs/памятка.md` is the one-page guide for the mother: which button for
 which task, sized by document length, big documents in two steps (Astra Pro
