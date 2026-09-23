@@ -1,4 +1,4 @@
-# One Telegram message when the OpenRouter balance falls below $1 - the
+# One Telegram message when the OpenRouter balance falls below $1 - the  
 # account the mother's chat runs on. Checked once a day before the working
 # day; silent while the balance stays low, re-armed by a top-up.
 # The last state (low or not) lives in the Actions cache between runs; a lost
@@ -9,7 +9,7 @@ name: Balance
 
 on:
   schedule:
-    - cron: "*/5 * * * *"
+    - cron: "0 6 * * *"
   workflow_dispatch:
     inputs:
       dry_run:
