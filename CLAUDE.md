@@ -329,12 +329,29 @@ Personal repository: short imperative commit messages, no ticket prefix, no AI
 attribution trailers. Every change goes through a pull request, including the
 ones Claude makes.
 
-Every non-draft PR gets a `Claude review` (workflow `claude-review.yml`,
-uses `CLAUDE_CODE_OAUTH_TOKEN`). It looks for bugs only - the live chat
-breaking, secrets leaking, money running away, code not doing what the PR
-says - and posts one inline comment per bug plus a one-line verdict; no
-style or polishing notes (owner, 2026-09-23). It never blocks by itself,
-so whoever merges, Claude included, waits for the verdict and fixes or
-answers every bug before merging. The monthly model-check PR is opened with
-`GITHUB_TOKEN`, which starts no workflows, so it gets no review - the owner
-reads that one.
+Where things are written (owner, 2026-09-23):
+- **Notion** - plans, constraints, idea drafts, and results after a merge.
+  A journal for people; CI never reads it and holds no Notion token.
+- **Git** - the concrete requirements. A small change is described in the
+  PR itself, by `.github/pull_request_template.md` (зачем, что меняется, как
+  проверено, риск). A big one - more than one file of logic, paid calls, the
+  deploy path, or anything the mother sees - also gets a spec in the same
+  PR, `docs/changes/<YYYY-MM-DD>-<topic>.md`, from the template in
+  `docs/changes/README.md`, with numbered, checkable requirements.
+- The border: while an idea is a draft it lives in Notion; once it is taken
+  into work its requirements move to git, and Notion keeps a line with the
+  link and later the result.
+
+Every non-draft PR gets a `Claude review` (`claude-review.yml`, uses
+`CLAUDE_CODE_OAUTH_TOKEN`). Bugs only - the live chat breaking, secrets
+leaking, money running away, the code not doing what the description or the
+linked spec says (a missed spec requirement counts) - one inline comment per
+bug and one verdict comment, «Круг N/3.» plus «Багов не нашёл.», «можно
+мёржить, баги мелкие» or «не мёржить до правки»; no style or polishing notes.
+The loop is review -> fix -> review, at most three rounds per PR, counted by
+the verdict comments; after the third the workflow posts «Лимит ревью» and
+stops, and the owner decides. «не мёржить» turns the check red. The free
+private plan has no required checks, so red is the only lock: nobody,
+Claude included, merges a PR with a red review or before its verdict. The
+monthly model-check PR is opened with `GITHUB_TOKEN`, which starts no
+workflows, so it gets no review - the owner reads that one.
