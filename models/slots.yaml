@@ -18,7 +18,7 @@
 #   presetId  - stable UUID of the preset in MongoDB; never changes for a slot
 #   label     - short human name shown in the preset title
 #   line      - the word in the id that names the model's line (opus, sonnet,
-#               terra, flash). The monthly check looks for a NEWER model of
+#               sol-pro, flash). The monthly check looks for a NEWER model of
 #               the same vendor whose id contains this word - that is the
 #               only kind of candidate it proposes (Opus 5 -> Opus 5.5).
 #   out_per_m - output price in USD per 1M tokens, as OpenRouter reports it;
@@ -178,7 +178,7 @@ vendors:
     flagship:
       - { id: openai/gpt-6-astra-pro,   presetId: ff117436-ed01-4691-82a5-3bd77a1bf058, label: "GPT-6 Astra Pro",   line: astra-pro, out_per_m: 50.0, rank: 2, purpose: "Большие документы, поиск литературы" }
     workhorse:
-      - { id: openai/gpt-5.6-terra-pro, presetId: 275eb791-c305-416d-a53a-e95fb93b4a0b, label: "GPT-5.6 Terra Pro", line: terra-pro, out_per_m: 12.0, rank: 3, purpose: "Запасная для больших документов" }
+      - { id: openai/gpt-6-sol-pro,     presetId: 275eb791-c305-416d-a53a-e95fb93b4a0b, label: "GPT-6 Sol Pro",     line: sol-pro,   out_per_m: 10.0, rank: 3, purpose: "Запасная для больших документов" }
     cheap:
       - { id: openai/gpt-6-luna-pro,    presetId: aab73c92-3187-4396-b5bd-ee305dffaa17, label: "GPT-6 Luna Pro",    line: luna-pro,  out_per_m: 0.5, rank: 1, purpose: "Мелочь, быт, черновик" }
 
