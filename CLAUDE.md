@@ -78,8 +78,7 @@ chat UI is deleted by the next deploy.
 both; `validate.py` fails when the file is not byte for byte what `slots.yaml`
 generates, so nobody edits it by hand or types a price marker.
 
-`slots.yaml`: vendors (Claude, OpenAI, Gemini, Grok, GLM, Kimi, then the cheap
-extras DeepSeek and MiniMax), three categories each, top to bottom -
+`slots.yaml`: vendors (Claude, OpenAI, Gemini, Grok), three categories each, top to bottom -
 `flagship` (exactly ONE model: the one the vendor positions as its best),
 `workhorse` (the everyday model; a vendor's only strong line lives here),
 `cheap` (cost-effective, for simple tasks) - at
@@ -93,19 +92,21 @@ by price, not computed. There is no "frontier" shelf on purpose: "a step
 below the flagship" is a tier for vendors, not for the mother (Opus at twice
 the price of Sonnet was neither here nor there - dropped 2026-09-23). Empty
 shelves are legitimate: a vendor that sells no model of a rung has none here,
-and nothing is added to fill a grid. Iteration 1, approved by the owner on
-2026-09-23:
+and nothing is added to fill a grid. Current set:
 
 | | flagship | workhorse | cheap |
 |---|---|---|---|
-| Claude | Fable 5.1 | Opus 5.5, Sonnet 5 | - |
+| Claude | Fable 5.1 | Opus 5.5 | - |
 | OpenAI | GPT-6 Astra Pro | GPT-5.6 Terra Pro | GPT-6 Luna Pro |
 | Gemini | - | - | Gemini 3.8 Flash |
 | Grok | - | Grok 4.7 | - |
-| GLM | - | GLM 5.3 | - |
-| Kimi | - | Kimi K3 | - |
-| DeepSeek (extra) | - | - | DeepSeek V4 |
-| MiniMax (extra) | - | - | MiniMax M3 |
+
+Iteration 2, 2026-09-23, decided on evidence: two blind bench runs
+(`docs/bench-2026-09-22.md`, `docs/bench-2026-09-23.md`) and the long-context
+test (`docs/longctx-2026-09-23.md`). Dropped: Sonnet 5 (last in both bench
+runs), Kimi K3 ($15, mid-table), DeepSeek V4, GLM 5.3 and MiniMax M3 (bottom
+half; GLM never answered the long manuscript). Opus 5.5 came back: third in
+the bench, 8/8 at 200k tokens.
 
 Preset = slot: a new version replaces the entry in place and keeps its
 `presetId`, so the mother sees the same preset with a new version.

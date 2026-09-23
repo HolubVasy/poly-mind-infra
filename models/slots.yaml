@@ -25,7 +25,7 @@
 #               refreshed by scripts/check_models.py --update-prices, never typed
 #
 # The order of the vendors here is the order in the chat's preset menu inside
-# each category (Claude, OpenAI, Gemini, Grok, GLM, Kimi, then the extras).
+# each category (Claude, OpenAI, Gemini, Grok).
 # Preset = slot: a new version replaces the entry in place, keeps its presetId,
 # and the mother sees the same preset with a new version.
 
@@ -56,7 +56,6 @@ vendors:
       - { id: anthropic/claude-fable-5.1, presetId: b8d5531b-257e-4869-ada5-3c96cfae7b2b, label: "Fable 5.1", line: fable,  out_per_m: 50.0 }
     workhorse:
       - { id: anthropic/claude-opus-5.5,  presetId: 794f02de-4ec5-49c2-84af-600994a2a41d, label: "Opus 5.5",  line: opus,   out_per_m: 20.0 }
-      - { id: anthropic/claude-sonnet-5,  presetId: 0f7adf43-3c73-49a4-b6c4-934e9a5e9e12, label: "Sonnet 5",  line: sonnet, out_per_m: 10.0 }
     cheap: []
 
   - name: OpenAI
@@ -81,32 +80,3 @@ vendors:
     workhorse:
       - { id: x-ai/grok-4.7, presetId: 07dbbec8-c752-480c-b036-2143241c052b, label: "Grok 4.7", line: grok, out_per_m: 4.8 }
     cheap: []
-
-  - name: GLM
-    prefix: z-ai/
-    flagship: []
-    workhorse:
-      - { id: z-ai/glm-5.3, presetId: 89f57356-bc37-4e7f-beea-38f0d821f84b, label: "GLM 5.3", line: glm, out_per_m: 2.0548 }
-    cheap: []
-
-  - name: Kimi
-    prefix: moonshotai/
-    flagship: []
-    workhorse:
-      - { id: moonshotai/kimi-k3, presetId: a576b4c2-7eb7-41a1-8c5a-2a64dba86728, label: "Kimi K3", line: kimi, out_per_m: 15.0 }
-    cheap: []
-
-  # Cheap extras kept from the presets as they were on 2026-09-22.
-  - name: DeepSeek
-    prefix: deepseek/
-    flagship: []
-    workhorse: []
-    cheap:
-      - { id: deepseek/deepseek-v4-pro-0813, presetId: dbeba7cf-f4e0-496b-b9af-cc73aa208534, label: "DeepSeek V4", line: deepseek-v4, out_per_m: 1.98 }
-
-  - name: MiniMax
-    prefix: minimax/
-    flagship: []
-    workhorse: []
-    cheap:
-      - { id: minimax/minimax-m3, presetId: 18c842da-c24a-42d4-9aa0-e0651a19d51c, label: "MiniMax M3", line: minimax-m, out_per_m: 1.2 }
