@@ -18,12 +18,12 @@
       "endpointType": "custom",
       "isArchived": false,
       "maxContextTokens": 900000,
-      "model": "openai/gpt-6-astra",
+      "model": "openai/gpt-6-astra-pro",
       "order": 2,
       "presetId": "ff117436-ed01-4691-82a5-3bd77a1bf058",
       "resendFiles": true,
       "tags": [],
-      "title": "🧠 GPT-6 Astra · 🔴 x20",
+      "title": "🧠 GPT-6 Astra Pro · 🔴 x20",
       "web_search": false
     },
     {

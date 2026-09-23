@@ -97,7 +97,7 @@ and nothing is added to fill a grid. Current set:
 | | flagship | workhorse | cheap |
 |---|---|---|---|
 | Claude | Fable 5.1 | Opus 5.5 | - |
-| OpenAI | GPT-6 Astra | GPT-5.6 Terra Pro | GPT-6 Luna Pro |
+| OpenAI | GPT-6 Astra Pro | GPT-5.6 Terra Pro | GPT-6 Luna Pro |
 | Gemini | - | - | Gemini 3.8 Flash |
 | Grok | - | Grok 4.7 | - |
 
@@ -106,9 +106,9 @@ Iteration 2, 2026-09-23, decided on evidence: two blind bench runs
 test (`docs/longctx-2026-09-23.md`). Dropped: Sonnet 5 (last in both bench
 runs), Kimi K3 ($15, mid-table), DeepSeek V4, GLM 5.3 and MiniMax M3 (bottom
 half; GLM never answered the long manuscript). Opus 5.5 came back: third in
-the bench, 8/8 at 200k tokens. OpenAI flagship is the plain GPT-6 Astra, not
-the Pro: same price, and the chat log shows she picks the plain one (21 requests
-in September 2026 against 2). Gemini Flash stays: fine at her sizes (~12k tokens
+the bench, 8/8 at 200k tokens. OpenAI flagship is GPT-6 Astra Pro: same price
+as the plain Astra she used to pick, and the Pro is the vendor's top - owner's
+call, 2026-09-23. Gemini Flash stays: fine at her sizes (~12k tokens
 a request, 8/8 at 50k), used by her, fails only at 200k.
 
 Preset = slot: a new version replaces the entry in place and keeps its
