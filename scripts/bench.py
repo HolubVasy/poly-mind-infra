@@ -25,7 +25,11 @@ changes on its own: the report is for the owner to read and decide.
 
 Usage:
   OPENROUTER_API_KEY=... python scripts/bench.py [--out docs/bench-<date>.md]
-      [--prompts edit,method] [--models a/b,c/d] [--judges a/b,c/d] [--dry-run]
+      [--prompts edit,method] [--models a/b,c/d] [--extra a/b,c/d]
+      [--judges a/b,c/d] [--dry-run]
+
+--extra adds models that are not in the menu (a guest, e.g. a model we
+dropped or are thinking of adding); price comes from the OpenRouter catalogue.
 
 --dry-run prints what would be asked, and calls nothing.
 """
@@ -118,6 +122,28 @@ def load_models(only: list[str] | None) -> list[dict]:
     return out
 
 
+def load_extra(ids: list[str]) -> list[dict]:
+    """Guests: models outside slots.yaml, priced from the OpenRouter catalogue."""
+    if not ids:
+        return []
+    slots = yaml.safe_load(SLOTS_PATH.read_text(encoding="utf-8"))
+    req = urllib.request.Request("https://openrouter.ai/api/v1/models",
+                                 headers={"User-Agent": "poly-mind-infra/bench"})
+    with urllib.request.urlopen(req, timeout=60) as resp:
+        cat = {m["id"]: m for m in json.load(resp)["data"]}
+    out = []
+    for mid in ids:
+        if mid not in cat:
+            sys.exit(f"--extra {mid}: not in the OpenRouter catalogue")
+        vendor = next((v for v in slots["vendors"] if mid.startswith(v["prefix"])), None)
+        prefix = vendor["prefix"] if vendor else mid.split("/")[0] + "/"
+        out.append({"id": mid, "label": cat[mid].get("name", mid).split(": ")[-1] + " (гость)",
+                    "vendor": vendor["name"] if vendor else prefix.rstrip("/"), "prefix": prefix,
+                    "category": "guest",
+                    "out_per_m": round(float(cat[mid]["pricing"]["completion"]) * 1_000_000, 4)})
+    return out
+
+
 def usable(text: str) -> str | None:
     """None when the answer is fine, otherwise why it is not."""
     if len(text.strip()) < 200:
@@ -141,12 +167,14 @@ def main() -> int:
     ap.add_argument("--out")
     ap.add_argument("--prompts", help="comma-separated prompt ids")
     ap.add_argument("--models", help="comma-separated model ids")
+    ap.add_argument("--extra", help="comma-separated model ids outside the menu")
     ap.add_argument("--judges", default=",".join(DEFAULT_JUDGES))
     ap.add_argument("--dry-run", action="store_true")
     args = ap.parse_args()
 
     prompts = load_prompts(args.prompts.split(",") if args.prompts else None)
     models = load_models(args.models.split(",") if args.models else None)
+    models += load_extra(args.extra.split(",") if args.extra else [])
     judges = [j for j in args.judges.split(",") if j]
     day = datetime.now(timezone.utc).date().isoformat()
     out_path = Path(args.out) if args.out else ROOT / "docs" / f"bench-{day}.md"
