@@ -28,6 +28,7 @@ Not in this repository, on purpose:
 |---|---|---|
 | `librechat/librechat.yaml` | `/opt/LibreChat/librechat.yaml` | Endpoints and their model lists |
 | `librechat/docker-compose.override.yml` | `/opt/LibreChat/docker-compose.override.yml` | Pins the LibreChat image, mounts |
+| `librechat/secrets-generation` | `/opt/LibreChat/.secrets-generation` | A bare number; raising it makes `apply.sh` rotate the secrets in `.env` on the server |
 | `librechat/deploy-compose.yml` | `/opt/LibreChat/deploy-compose.yml` | Only its `client` service (LibreChat-NGINX) is used |
 | `nginx/nginx.conf` | `/opt/LibreChat/client/nginx.conf` | TLS, basic auth, proxy for chat and forpost |
 | `certbot/renewal-hooks/{pre,post}/*.sh` | `/etc/letsencrypt/renewal-hooks/...` | Stop/start nginx around cert renewal |
@@ -237,6 +238,18 @@ Manual run: Actions -> Balance -> Run workflow (dry run by default).
   container ports around `ufw`, so `ufw` protects nothing else.
 - Registration is closed (`ALLOW_REGISTRATION=false` in `.env`); strangers had
   signed up through `/api`, which is outside basic auth.
+- Secrets rotate by pull request without ever entering the repo:
+  `librechat/secrets-generation` is a bare number. When it goes above the
+  number in `/opt/LibreChat/.secrets-generation`, `apply.sh` generates new
+  random `JWT_SECRET`, `JWT_REFRESH_SECRET`, `CREDS_KEY`, `CREDS_IV` and
+  `MEILI_MASTER_KEY` on the server (`openssl rand`), rewrites them in `.env`
+  in place, backs `.env` up, recreates `api`, `rag_api` and `meilisearch`
+  (rag_api and meilisearch take them as container env), and rolls `.env`
+  back if the chat is not healthy. Everyone is logged out once. Until
+  2026-09-23 all five were the public values from LibreChat's
+  `.env.example`, so anyone could forge a session for `/api`. `CREDS_*`
+  encrypt user-provided keys; this chat stores none (`keys` and
+  `pluginauths` are empty), so rotating them loses nothing.
 
 `librechat.yaml` has one endpoint, "Все", whose list is exactly the models the
 presets use. The seven old task endpoints («Методика наночастиц», «Редактор

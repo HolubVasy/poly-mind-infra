@@ -161,7 +161,28 @@ def check_slots(endpoints: dict[str, dict]) -> None:
         errors.append(str(e))
 
 
+def check_secrets_generation() -> None:
+    """librechat/secrets-generation is a bare number; apply.sh rotates the
+    secrets on the server when it goes up. Anything else there is a mistake -
+    and a real secret pasted into it would be a leak."""
+    path = ROOT / "librechat" / "secrets-generation"
+    if not path.exists():
+        errors.append("librechat/secrets-generation is missing")
+    elif not re.fullmatch(r"\d{1,4}\n?", path.read_text(encoding="utf-8")):
+        errors.append("librechat/secrets-generation must be a whole number and nothing else")
+
+
+def check_line_endings() -> None:
+    """Shell scripts run on the Linux server; one Windows line ending breaks
+    bash (syntax error near unexpected token do + CR). Happened 2026-09-23."""
+    for path in list((ROOT / "scripts").glob("*.sh")) + list((ROOT / "certbot").rglob("*.sh")):
+        if b"\r" in path.read_bytes():
+            errors.append(f"{path.relative_to(ROOT).as_posix()}: Windows line endings (CRLF) - convert to LF")
+
+
 def main() -> int:
+    check_line_endings()
+    check_secrets_generation()
     endpoints = load_endpoints()
     check_presets(endpoints)
     check_slots(endpoints)
