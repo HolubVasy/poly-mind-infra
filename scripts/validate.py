@@ -124,6 +124,8 @@ def check_slots(endpoints: dict[str, dict]) -> None:
                     errors.append(f"{where}: line {m['line']!r} is not a part of the id")
                 if "rank" in m and not (isinstance(m["rank"], int) and m["rank"] >= 1):
                     errors.append(f"{where}: rank must be a whole number from 1")
+                if "max_context" in m and not (isinstance(m["max_context"], int) and 16000 <= m["max_context"] <= 900000):
+                    errors.append(f"{where}: max_context must be a whole number from 16000 to 900000")
     lines = [str(m.get("line")) for v in slots.get("vendors") or [] for c in categories for m in v.get(c) or []]
     for dup in sorted({x for x in lines if lines.count(x) > 1}):
         errors.append(f"slots.yaml: line {dup!r} is used by more than one slot - helpers could not tell them apart")

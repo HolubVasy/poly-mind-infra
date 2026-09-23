@@ -98,6 +98,12 @@ def slot_model(slots: dict, line: str) -> dict:
     return found[0]
 
 
+def context_cap(model: dict) -> dict:
+    """A model's own maxContextTokens (slots.yaml `max_context`), when it has
+    one; a helper gets the cap of the slot it runs on."""
+    return {"maxContextTokens": int(model["max_context"])} if "max_context" in model else {}
+
+
 def helper_presets(slots: dict) -> list[dict]:
     """Buttons with a procedure instead of a model choice: a model and
     instructions baked in, so the rule lives in the button. The model is
@@ -115,6 +121,7 @@ def helper_presets(slots: dict) -> list[dict]:
             "promptPrefix": with_common(slots, (h.get("intro", "").strip() + "\n\n" + text).strip()),
             "order": -len(slots["helpers"]) + i,
             **PRESET_DEFAULTS,
+            **context_cap(slot_model(slots, h["slot"])),
         })
     return out
 
@@ -155,6 +162,7 @@ def build(slots: dict) -> dict:
             "order": order,
             "promptPrefix": with_common(slots, ""),
             **PRESET_DEFAULTS,
+            **context_cap(model),
         })
     return {"presets": presets}
 

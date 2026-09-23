@@ -146,6 +146,22 @@ Flash. A new version inherits its slot's rank; the rank changes only on the
 owner's word. Known limit: Fable 5.1 does not finish on documents of 100k+
 tokens (three runs) - for those, Astra Pro or Opus.
 
+**Context cap (`max_context`, 2026-09-23).** The instruction in ✏️ to refuse a
+big text cannot work: Fable goes silent before it answers. So the Fable slot
+carries `max_context: 100000`, which becomes `maxContextTokens` of its preset
+and of every helper on that slot (✏️); the rest keep 900000. The unit is
+LibreChat's own count (local Claude tokenizer), not OpenRouter's. Calibrated
+on the long-context manuscripts, counted by that tokenizer inside the
+container: the 69-page text Fable handled (8/8) is 64k, the 142-page text it
+went silent on is 130k; OpenRouter reported about 2.25x more for both. From
+the second message on LibreChat scales its count by the real usage it saw, so
+there the cap means real tokens, about 45 pages of chat: in the second round
+of a 40-page edit the original drops out and Fable's corrected copy stays. A single message over
+the cap is refused with an English error («...make your message shorter»);
+the памятка tells the mother what it means. 60k was rejected: after the
+rescaling it would keep about 27 pages and silently drop a 30-page text from
+the second round.
+
 **The rule that broke the presets on 2026-09-22:** a preset's `model` must be in
 the `models.default` list of its `endpoint` in `librechat.yaml`. If it is not,
 LibreChat does not fail - it silently answers with the FIRST model of that list

@@ -29,6 +29,16 @@
 #               owner's call on the evidence in docs/ (bench and long-context
 #               runs of 2026-09-22/23). Models without a rank go after the
 #               ranked ones, in vendor order.
+#   max_context - optional hard cap on the preset's context, in LibreChat's
+#               own token count (its local Claude/o200k tokenizer); default
+#               900000. LibreChat refuses a message that alone does not fit
+#               and drops the oldest messages of a longer chat. From the
+#               second message on it scales its count by the provider's real
+#               usage (about x2.25 for Fable on Russian), so the cap then
+#               means real tokens. Set it only where a model is proven to
+#               fail on long input; helpers on that slot inherit it. Stays
+#               when a newer version replaces the model - drop it by PR once
+#               the new version passes the long-text test.
 #
 # Menu order inside a category: by rank, then by the order of the vendors here.
 # Preset = slot: a new version replaces the entry in place, keeps its presetId,
@@ -158,7 +168,7 @@ vendors:
   - name: Claude
     prefix: anthropic/
     flagship:
-      - { id: anthropic/claude-fable-5.1, presetId: b8d5531b-257e-4869-ada5-3c96cfae7b2b, label: "Fable 5.1", line: fable,  out_per_m: 50.0, rank: 1, purpose: "Править текст. Не для текстов длиннее 40 страниц" }
+      - { id: anthropic/claude-fable-5.1, presetId: b8d5531b-257e-4869-ada5-3c96cfae7b2b, label: "Fable 5.1", line: fable,  out_per_m: 50.0, rank: 1, max_context: 100000, purpose: "Править текст. Не для текстов длиннее 40 страниц" }
     workhorse:
       - { id: anthropic/claude-opus-5.5,  presetId: 794f02de-4ec5-49c2-84af-600994a2a41d, label: "Opus 5.5",  line: opus,   out_per_m: 20.0, rank: 2, purpose: "Всё, когда не знаешь" }
     cheap: []
