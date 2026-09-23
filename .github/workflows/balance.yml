@@ -1,0 +1,61 @@
+# One Telegram message when the OpenRouter balance falls below $1 - the
+# account the mother's chat runs on. Checked once a day before the working
+# day; silent while the balance stays low, re-armed by a top-up.
+# The last state (low or not) lives in the Actions cache between runs; a lost
+# cache only means one repeated message if the balance is still low.
+name: Balance
+
+on:
+  schedule:
+    - cron: "0 6 * * *"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Only print the balance and the decision; send nothing, keep the state"
+        type: boolean
+        default: true
+
+concurrency:
+  group: balance
+  cancel-in-progress: false
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Last state
+        uses: actions/cache/restore@v4
+        with:
+          path: balance-state.json
+          key: balance-state-${{ github.run_id }}
+          restore-keys: balance-state-
+      - name: Check the balance
+        id: check
+        env:
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+        run: |
+          before=$(cat balance-state.json 2>/dev/null | python -c "import json,sys;print(json.load(sys.stdin).get('low'))" 2>/dev/null || echo none)
+          python scripts/balance_check.py --threshold 1 --state balance-state.json --message balance-message.txt | tee -a "$GITHUB_STEP_SUMMARY"
+          after=$(python -c "import json;print(json.load(open('balance-state.json')).get('low'))")
+          [ "$before" != "$after" ] && echo "changed=true" >> "$GITHUB_OUTPUT" || echo "changed=false" >> "$GITHUB_OUTPUT"
+      - name: Telegram
+        if: ${{ !inputs.dry_run && hashFiles('balance-message.txt') != '' }}
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          curl -sS -o /dev/null -w "telegram: %{http_code}\n" \
+            --data-urlencode "chat_id=$TELEGRAM_CHAT_ID" \
+            --data-urlencode "text=$(cat balance-message.txt)" \
+            --data-urlencode "disable_web_page_preview=true" \
+            "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/sendMessage"
+      - name: Remember the state
+        if: ${{ !inputs.dry_run && steps.check.outputs.changed == 'true' }}
+        uses: actions/cache/save@v4
+        with:
+          path: balance-state.json
+          key: balance-state-${{ github.run_id }}
