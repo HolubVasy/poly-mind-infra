@@ -37,6 +37,22 @@ endpoint: "Все"
 # Hard cap on presets in the chat, so the menu stays readable.
 max_models: 20
 
+# Helper presets: not a model slot but a button with instructions. The
+# instructions are a file in the repo (the памятка), copied into the preset's
+# promptPrefix by build_presets.py - so the rules live in one place. Goes to
+# the top of the menu.
+helpers:
+  - presetId: 5b7c1c2e-9a0f-4c1d-8f3a-2e6d7a1b4c90
+    title: "❓ Какую кнопку?"
+    model: openai/gpt-6-luna-pro
+    instructions_file: docs/памятка.md
+    intro: |
+      Ты помощник по выбору кнопки (модели) в этом чате. Пользователь описывает
+      задачу - ответь коротко, в 2-4 строках: какую кнопку взять (значок и
+      название), почему одной фразой, и какую фразу написать первой строкой
+      запроса. Если документ длинный - напомни про два шага. Не делай саму
+      задачу, только подскажи кнопку. Правила ниже - единственный источник.
+
 # The category shows in the menu as its icon only - the word was noise
 # (owner, 2026-09-22). LibreChat itself appends the model id after the
 # title, so the title carries only the label and the price marker.

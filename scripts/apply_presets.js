@@ -26,7 +26,7 @@ if (!admin) {
 }
 const owner = String(admin._id);
 
-const FIELDS = ["title", "endpoint", "endpointType", "model", "maxContextTokens", "resendFiles", "web_search", "tags", "isArchived", "order"];
+const FIELDS = ["title", "endpoint", "endpointType", "model", "maxContextTokens", "resendFiles", "web_search", "tags", "isArchived", "order", "promptPrefix"];
 const current = db.presets.find({ user: owner }).toArray();
 const byId = Object.fromEntries(current.map((p) => [p.presetId, p]));
 const wantedIds = new Set(wanted.map((p) => p.presetId));

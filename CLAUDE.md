@@ -215,7 +215,10 @@ So the `max_tokens: 2048` there caps nothing - the chat log shows answers of
 
 `docs/памятка.md` is the one-page guide for the mother: which button for
 which task, sized by document length, big documents in two steps (Astra Pro
-digest first). Keep it in step with the menu.
+digest first). Keep it in step with the menu. It is also the instruction
+text of the helper preset «❓ Какую кнопку?» (`helpers:` in `slots.yaml`):
+`build_presets.py` copies the file into the preset's `promptPrefix`, so the
+rules have one home and a merged edit of the памятка updates the button.
 
 Lessons already paid for - do not repeat:
 - The live files are single-file bind mounts. Rewrite them in place
