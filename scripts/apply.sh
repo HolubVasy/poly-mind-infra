@@ -57,7 +57,7 @@ for pair in "${FILES[@]}"; do
     cp -p "$dst" "$dst.bak-$TS"
     backups+=("$dst")
   fi
-  cat "$src" > "$dst"
+  cp "$src" "$dst"
   log "updated $dst"
 done
 chmod +x /etc/letsencrypt/renewal-hooks/pre/stop-nginx.sh /etc/letsencrypt/renewal-hooks/post/start-nginx.sh
