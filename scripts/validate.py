@@ -161,7 +161,19 @@ def check_slots(endpoints: dict[str, dict]) -> None:
         errors.append(str(e))
 
 
+def check_secrets_generation() -> None:
+    """librechat/secrets-generation is a bare number; apply.sh rotates the
+    secrets on the server when it goes up. Anything else there is a mistake -
+    and a real secret pasted into it would be a leak."""
+    path = ROOT / "librechat" / "secrets-generation"
+    if not path.exists():
+        errors.append("librechat/secrets-generation is missing")
+    elif not re.fullmatch(r"\d{1,4}\n?", path.read_text(encoding="utf-8")):
+        errors.append("librechat/secrets-generation must be a whole number and nothing else")
+
+
 def main() -> int:
+    check_secrets_generation()
     endpoints = load_endpoints()
     check_presets(endpoints)
     check_slots(endpoints)
