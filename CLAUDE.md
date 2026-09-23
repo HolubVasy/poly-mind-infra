@@ -99,7 +99,7 @@ generates, so nobody edits it by hand or types a price marker.
 `cheap` (cost-effective, for simple tasks) - at
 most `max_models` (20) in total. A model = OpenRouter `id`, a stable
 `presetId`, a short `label`, a `line` (the word in the id that names its
-line: sonnet, terra-pro, flash) and `out_per_m`, the output price OpenRouter
+line: sonnet, sol-pro, flash) and `out_per_m`, the output price OpenRouter
 reports.
 
 The category is the owner's call, by how the vendor positions the model - not
@@ -112,7 +112,7 @@ and nothing is added to fill a grid. Current set:
 | | flagship | workhorse | cheap |
 |---|---|---|---|
 | Claude | Fable 5.1 | Opus 5.5 | - |
-| OpenAI | GPT-6 Astra Pro | GPT-5.6 Terra Pro | GPT-6 Luna Pro |
+| OpenAI | GPT-6 Astra Pro | GPT-6 Sol Pro | GPT-6 Luna Pro |
 | Gemini | - | - | Gemini 3.8 Flash |
 | Grok | - | Grok 4.7 | - |
 
@@ -125,6 +125,15 @@ the bench, 8/8 at 200k tokens. OpenAI flagship is GPT-6 Astra Pro: same price
 as the plain Astra she used to pick, and the Pro is the vendor's top - owner's
 call, 2026-09-23. Gemini Flash stays: fine at her sizes (~12k tokens
 a request, 8/8 at 50k), used by her, fails only at 200k.
+
+OpenAI workhorse, 2026-09-23 (owner's call): GPT-6 Sol Pro replaced GPT-5.6
+Terra Pro in the same slot and `presetId`. Blind bench, Sol against Terra,
+judges Fable and Grok: Sol 0.60, Terra 0.40 - Sol took method, sources and
+shrink, Terra edit and terms (`docs/bench-2026-09-23-sol.md`). Long context:
+8/8 with no false alarms at 100k and 200k, as Terra
+(`docs/longctx-2026-09-23-sol.md`). And $10 against $12 per 1M output.
+Sol sits right after Grok, above Opus (rank 2, Opus 3) - owner's call,
+2026-09-23.
 
 Preset = slot: a new version replaces the entry in place and keeps its
 `presetId`, so the mother sees the same preset with a new version.
@@ -141,7 +150,7 @@ rounded; colour `⚪️` up to x1, `🟢` up to x7, `🔴` above (thresholds in
 `build_presets.py` assigns it - category top to bottom, then the owner's
 `rank` inside the category (1 = strongest, set in `slots.yaml` on the evidence
 in `docs/`: bench and long-context runs), then vendor order, then the dearer
-model first. As of 2026-09-23: Fable, Astra Pro; Grok, Opus, Terra; Luna,
+model first. As of 2026-09-23: Fable, Astra Pro; Grok, Sol, Opus; Luna,
 Flash. A new version inherits its slot's rank; the rank changes only on the
 owner's word. Known limit: Fable 5.1 does not finish on documents of 100k+
 tokens (three runs) - for those, Astra Pro or Opus.

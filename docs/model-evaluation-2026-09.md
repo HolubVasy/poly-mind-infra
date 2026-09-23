@@ -13,6 +13,7 @@ scripts in `scripts/` (`bench.py`, `longctx.py`, `judge.py`).
 | **Bench, run 2** (23 Sep) | same, plus Opus 5.5 as a guest | same | $4.36 |
 | **Long context, 50k / 200k tokens** | seed-generated manuscript with 8 planted contradictions | key (no judge) | ~$17 incl. two retries |
 | **Long context, tiered 7k / 13k / 100k** | same, 3 / 5 / 8 plants, answer budget 8k | key | $5.72 |
+| **Sol Pro vs Terra Pro** (23 Sep) | bench 2 models x 5 tasks; long context 100k / 200k for Sol | 2 judges (Astra Pro skips OpenAI); key | $0.92 + $1.59 |
 | **Pairwise judge** (`judge.py`) | candidate vs current on one standard prompt | 1 judge, blind | cents per pair |
 | **Her usage log** | MongoDB `transactions`, Feb-Sep 2026 | - | free |
 
@@ -159,6 +160,13 @@ history. One Opus 5 answer of 31,277 tokens cost $0.78.
 - **Menu (7 presets)**, ranked by strength inside each shelf on this evidence:
   🧠 Fable 5.1, GPT-6 Astra Pro · ⚙️ Grok 4.7, Opus 5.5, GPT-5.6 Terra Pro ·
   ⚡ GPT-6 Luna Pro, Gemini 3.8 Flash.
+- **GPT-6 Sol Pro replaced GPT-5.6 Terra Pro** in the OpenAI workhorse slot
+  (same `presetId`, same rank). Sol 0.60 against Terra 0.40 in a blind
+  two-model bench: Sol took method, sources and shrink, Terra edit and terms,
+  both judges agreeing on every task (`bench-2026-09-23-sol.md`). Long
+  context 8/8, no false alarms, at 100k and 200k, as Terra
+  (`longctx-2026-09-23-sol.md`). $10 against $12 per 1M output. Owner put
+  Sol right after Grok, above Opus. Terra's rows above are kept as measured.
 - **Dropped**: Sonnet 5, Kimi K3, DeepSeek V4, GLM 5.3, MiniMax M3.
 - **Opus 5.5 returned** (third in the bench, 8/8 at 200k). Astra Pro kept as
   the OpenAI flagship (same price as plain Astra she used to pick).
