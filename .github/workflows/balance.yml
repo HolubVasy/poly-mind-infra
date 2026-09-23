@@ -3,6 +3,8 @@
 # day; silent while the balance stays low, re-armed by a top-up.
 # The last state (low or not) lives in the Actions cache between runs; a lost
 # cache only means one repeated message if the balance is still low.
+# Registered by GitHub only when a push touches this file (the first push,
+# PR #38, was lost on GitHub's side and left it unregistered).
 name: Balance
 
 on:
