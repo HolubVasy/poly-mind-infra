@@ -172,7 +172,16 @@ def check_secrets_generation() -> None:
         errors.append("librechat/secrets-generation must be a whole number and nothing else")
 
 
+def check_line_endings() -> None:
+    """Shell scripts run on the Linux server; one Windows line ending breaks
+    bash (syntax error near unexpected token do + CR). Happened 2026-09-23."""
+    for path in list((ROOT / "scripts").glob("*.sh")) + list((ROOT / "certbot").rglob("*.sh")):
+        if b"\r" in path.read_bytes():
+            errors.append(f"{path.relative_to(ROOT).as_posix()}: Windows line endings (CRLF) - convert to LF")
+
+
 def main() -> int:
+    check_line_endings()
     check_secrets_generation()
     endpoints = load_endpoints()
     check_presets(endpoints)
