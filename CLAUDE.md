@@ -64,7 +64,15 @@ Dry run: Actions -> Deploy -> Run workflow -> dry_run. Prints the diff, changes
 nothing.
 
 What restarts: `librechat.yaml` -> `docker restart LibreChat` (about 10 s of
-downtime for the chat). `nginx.conf` -> `nginx -t`, then `nginx -s reload` (no
+downtime for the chat). A new image in the override -> first a `mongodump` to
+`/root/backup/librechat_before_deploy_<ts>.archive.gz` (a new version may
+migrate the database, and putting the old file back does not undo that), a
+`docker compose pull` while the old container still serves, then the
+restart; a rollback runs `docker compose up -d` again so the old image comes
+back. Every image change goes through the `Image smoke test` workflow first:
+the pinned image is started in CI on an empty MongoDB with our
+`librechat.yaml`, registered into, and must list the "Все" endpoint with
+exactly our models and return every preset. `nginx.conf` -> `nginx -t`, then `nginx -s reload` (no
 downtime; a failing `nginx -t` aborts and rolls back). Compose files ->
 `docker compose up -d` plus the nginx `client` service. Presets -> nothing, they
 are read from the database per request. **Merge config changes when the mother is
@@ -228,8 +236,9 @@ Manual run: Actions -> Balance -> Run workflow (dry run by default).
 
 - Host `145.63.130.166`, Zomro "Optimal AMD", Germany, Ubuntu 22.04. The box
   must stay in Europe: the mother's route from Belarus to Germany is the good one.
-- Containers: `LibreChat` (image pinned by digest in the override - the current
-  upstream image refuses the default `JWT_SECRET`), `LibreChat-NGINX`,
+- Containers: `LibreChat` (stable `librechat:v0.8.7`, pinned by digest in the
+  override; until 2026-09-23 a February `librechat-dev` build, pinned because
+  newer images refuse the public default `JWT_SECRET`), `LibreChat-NGINX`,
   `chat-mongodb`, `chat-meilisearch`, `vectordb`, `rag_api`, `forpost`, and the
   job-search `job_search_db` and `job_search_app` (managed from their own repo,
   not here; nginx proxies `jobs.poly-mind.net` to `job_search_app:8501`, no

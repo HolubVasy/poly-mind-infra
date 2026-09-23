@@ -1,0 +1,111 @@
+# Before a new LibreChat image (or a config it has to read) reaches the
+# mother's chat: start exactly that image here, on an empty MongoDB, with our
+# librechat.yaml and presets, and use it through its API the way the chat
+# does - register, log in, list endpoints and models, load the presets.
+# Nothing here touches the server; the key is a dummy, no model is called.
+name: Image smoke test
+
+on:
+  pull_request:
+    paths:
+      - "librechat/docker-compose.override.yml"
+      - "librechat/librechat.yaml"
+      - "presets/**"
+      - "scripts/apply_presets.js"
+      - ".github/workflows/image-smoke.yml"
+  workflow_dispatch:
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -q pyyaml
+
+      - name: Start MongoDB and the pinned LibreChat image
+        run: |
+          image=$(python -c "import yaml;print(yaml.safe_load(open('librechat/docker-compose.override.yml'))['services']['api']['image'])")
+          echo "image: $image" | tee -a "$GITHUB_STEP_SUMMARY"
+          docker network create lc
+          docker run -d --name mongo --network lc mongo:8.0.17
+          docker run -d --name lc --network lc -p 3080:3080 \
+            -e HOST=0.0.0.0 -e PORT=3080 -e DOMAIN_CLIENT=http://localhost:3080 -e DOMAIN_SERVER=http://localhost:3080 \
+            -e MONGO_URI=mongodb://mongo:27017/LibreChat \
+            -e JWT_SECRET=$(openssl rand -hex 32) -e JWT_REFRESH_SECRET=$(openssl rand -hex 32) \
+            -e CREDS_KEY=$(openssl rand -hex 32) -e CREDS_IV=$(openssl rand -hex 16) \
+            -e ALLOW_REGISTRATION=true -e ALLOW_EMAIL_LOGIN=true -e ALLOW_UNVERIFIED_EMAIL_LOGIN=true \
+            -e SEARCH=false -e OPENROUTER_API_KEY=sk-or-smoke-test-dummy \
+            -e CONFIG_PATH=/app/librechat.yaml \
+            -v "$PWD/librechat/librechat.yaml:/app/librechat.yaml:ro" \
+            "$image"
+          for i in $(seq 1 90); do
+            [ "$(curl -s -o /dev/null -w '%{http_code}' http://localhost:3080/health)" = 200 ] && { echo "healthy after ~$((i*2)) s"; exit 0; }
+            sleep 2
+          done
+          docker logs lc | tail -60
+          exit 1
+
+      - name: Use it like the chat does
+        run: |
+          python - <<'EOF'
+          import json, sys, urllib.request, yaml
+
+          BASE = "http://localhost:3080"
+          def call(method, path, body=None, token=None):
+              req = urllib.request.Request(BASE + path, method=method,
+                  data=json.dumps(body).encode() if body is not None else None,
+                  headers={"Content-Type": "application/json", **({"Authorization": f"Bearer {token}"} if token else {})})
+              with urllib.request.urlopen(req, timeout=30) as r:
+                  return json.load(r)
+
+          user = {"name": "Smoke", "username": "smoke", "email": "smoke@example.com",
+                  "password": "Smoke-test-12345", "confirm_password": "Smoke-test-12345"}
+          call("POST", "/api/auth/register", user)
+          token = call("POST", "/api/auth/login", {"email": user["email"], "password": user["password"]})["token"]
+
+          cfg = yaml.safe_load(open("librechat/librechat.yaml", encoding="utf-8"))
+          want = {ep["name"]: ep["models"]["default"] for ep in cfg["endpoints"]["custom"]}
+          endpoints = call("GET", "/api/endpoints", token=token)
+          models = call("GET", "/api/models", token=token)
+          problems = []
+          for name, listed in want.items():
+              if name not in endpoints:
+                  problems.append(f"endpoint {name!r} missing from /api/endpoints")
+              if models.get(name) != listed:
+                  problems.append(f"endpoint {name!r}: /api/models gives {models.get(name)}, librechat.yaml lists {listed}")
+          print("endpoints:", sorted(endpoints))
+          print("models of", {k: len(v) for k, v in models.items() if k in want})
+          open("/tmp/token", "w").write(token)
+          if problems:
+              print("\n".join("ERROR: " + p for p in problems)); sys.exit(1)
+          EOF
+
+      - name: Load the presets and read them back
+        run: |
+          docker cp presets/presets.json mongo:/tmp/presets.json
+          docker cp scripts/apply_presets.js mongo:/tmp/apply_presets.js
+          docker exec -e DRY_RUN=0 -e BACKUP_TAG=smoke mongo mongosh --quiet LibreChat /tmp/apply_presets.js
+          python - <<'EOF'
+          import json, sys, urllib.request
+          token = open("/tmp/token").read()
+          req = urllib.request.Request("http://localhost:3080/api/presets", headers={"Authorization": f"Bearer {token}"})
+          got = json.load(urllib.request.urlopen(req, timeout=30))
+          want = json.load(open("presets/presets.json", encoding="utf-8"))["presets"]
+          titles = {p["title"] for p in got}
+          missing = [p["title"] for p in want if p["title"] not in titles]
+          print(f"/api/presets returns {len(got)} presets, presets.json has {len(want)}")
+          if missing:
+              print("ERROR: missing", missing); sys.exit(1)
+          EOF
+
+      - name: Config warnings from the image
+        if: always()
+        run: |
+          docker logs lc 2>&1 | grep -i -E "config|invalid|zod|outdated|deprecat" | head -40 | tee -a "$GITHUB_STEP_SUMMARY" || true
+          if docker logs lc 2>&1 | grep -q -i -E "invalid custom config|ZodError"; then
+            echo "the image rejects librechat.yaml"; exit 1
+          fi
