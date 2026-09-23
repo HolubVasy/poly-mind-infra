@@ -150,7 +150,9 @@ def usable(text: str) -> str | None:
         return f"слишком короткий ответ ({len(text.strip())} знаков)"
     letters = [c for c in text if c.isalpha()]
     cyr = sum("а" <= c.lower() <= "я" or c.lower() == "ё" for c in letters)
-    if not letters or cyr / len(letters) < 0.5:
+    # 0.3, not 0.5: the "sources" task asks for search queries IN ENGLISH, and
+    # on 2026-09-23 two correct answers were thrown out as "not Russian".
+    if not letters or cyr / len(letters) < 0.3:
         return "ответ не по-русски"
     return None
 
