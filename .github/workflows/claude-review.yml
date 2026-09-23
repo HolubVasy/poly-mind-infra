@@ -59,6 +59,13 @@ jobs:
             | awk '{s+=$1} END {print s+0}')
           [ "$already" -gt 0 ] || gh pr comment "$PR" --body "Лимит ревью: $MAX_ROUNDS круга пройдено, дальше решает владелец - ложное срабатывание это или задачу пора резать. Новые коммиты больше не ревьюятся."
           echo "Round limit reached - no review." >> "$GITHUB_STEP_SUMMARY"
+          # No new review, so the last verdict stands: a red PR stays red
+          # until the owner decides, a new push cannot turn it green.
+          last=$(gh api "repos/$GITHUB_REPOSITORY/issues/$PR/comments" --paginate             --jq '.[] | select(.user.login == "github-actions[bot]") | select(.body | test("Багов не нашёл|мёржить")) | .body' | tail -n 1)
+          if echo "$last" | grep -q "не мёржить"; then
+            echo "::error::the last review verdict was «не мёржить» and the round limit is reached - the owner decides"
+            exit 1
+          fi
 
       - name: Review
         if: ${{ fromJSON(steps.round.outputs.done) < fromJSON(env.MAX_ROUNDS) }}
@@ -124,7 +131,8 @@ jobs:
             --allowedTools "Read,Glob,Grep,mcp__github_inline_comment__create_inline_comment,Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*)"
 
       - name: Verdict
-        if: ${{ fromJSON(steps.round.outputs.done) < fromJSON(env.MAX_ROUNDS) }}
+        # always(): a review that crashed or posted nothing must end red too.
+        if: ${{ always() && steps.round.outputs.done != '' && fromJSON(steps.round.outputs.done) < fromJSON(env.MAX_ROUNDS) }}
         env:
           STARTED: ${{ steps.round.outputs.started }}
         run: |
@@ -132,7 +140,8 @@ jobs:
             --jq ".[] | select(.user.login == \"github-actions[bot]\") | select(.created_at >= \"$STARTED\") | select(.body | test(\"Багов не нашёл|мёржить\")) | .body" | tail -n 1)
           echo "Verdict: ${verdict:-none}" >> "$GITHUB_STEP_SUMMARY"
           if [ -z "$verdict" ]; then
-            echo "::warning::the review posted no verdict comment"
+            echo "::error::the review posted no verdict - the PR is not reviewed, do not merge"
+            exit 1
           elif echo "$verdict" | grep -q "не мёржить"; then
             echo "::error::Claude review: не мёржить до правки - see the inline comments"
             exit 1
