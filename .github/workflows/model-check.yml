@@ -53,6 +53,10 @@ jobs:
         with:
           python-version: "3.12"
       - run: pip install -q pyyaml
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - run: npm ci --no-audit --no-fund
 
       - name: Facts from OpenRouter, prices into slots.yaml
         run: |
@@ -107,12 +111,15 @@ jobs:
                list unchanged. Do not touch `helpers:` - each names a slot
                by its `line` and follows the new model by itself.
                Replace the old label with the new one everywhere in
-               docs/памятка.md (e.g. "Opus 5.5" -> "Opus 6"); the helper
-               «❓ Какую кнопку?» reads that file, and gate_check.py fails
-               while the old label is still there.
+               docs/памятка.md and in scripts/memo_docx.js (e.g. "Opus 5.5"
+               -> "Opus 6"), then rebuild the Word памятка with
+               `node scripts/memo_docx.js`. The helper «❓ Какую кнопку?»
+               reads the .md, the mother keeps the Word one; gate_check.py
+               fails while an old label is left in either.
             5. Run, and fix until all pass:
                python scripts/build_presets.py
                python scripts/validate.py
+               node scripts/memo_docx.js --check
                python scripts/gate_check.py --base origin/main --report ${{ env.REPORT_JSON }}
             6. If `git status --porcelain` is empty: make no commit, no branch,
                no pull request, and end with the single line NO CHANGES.
@@ -124,7 +131,7 @@ jobs:
                "vanished from OpenRouter", or "price"), the procedure buttons
                that moved with a slot (gate_check.py prints them), the list
                of missing models, and the candidates that lost, one line each.
-          claude_args: '--allowed-tools "Read,Edit,Write,Glob,Grep,Bash(git:*),Bash(python scripts/*),Bash(gh pr create:*),Bash(gh pr view:*)"'
+          claude_args: '--allowed-tools "Read,Edit,Write,Glob,Grep,Bash(git:*),Bash(python scripts/*),Bash(node scripts/memo_docx.js*),Bash(gh pr create:*),Bash(gh pr view:*)"'
 
       - name: Gate the pull request
         id: pr
@@ -142,7 +149,7 @@ jobs:
           echo "number=$number" >> "$GITHUB_OUTPUT"
           git fetch -q origin "$BRANCH"
           git checkout -q "origin/$BRANCH"
-          if ! python scripts/validate.py || ! python scripts/gate_check.py --base origin/main --report "$REPORT_JSON" --json /tmp/gate.json; then
+          if ! python scripts/validate.py || ! node scripts/memo_docx.js --check || ! python scripts/gate_check.py --base origin/main --report "$REPORT_JSON" --json /tmp/gate.json; then
             gh pr close "$number" --comment "Closed by the Model check workflow: validate.py or gate_check.py failed on this branch (see the run). Nothing was merged."
             echo "outcome=closed" >> "$GITHUB_OUTPUT"
             echo "PR #$number failed the gate and was closed." >> "$GITHUB_STEP_SUMMARY"

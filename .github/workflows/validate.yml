@@ -18,6 +18,12 @@ jobs:
       - run: pip install -q pyyaml
       - name: Config and presets are consistent
         run: python scripts/validate.py
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - run: npm ci --no-audit --no-fund
+      - name: Word памятка is what its generator builds
+        run: node scripts/memo_docx.js --check
       - name: Scripts parse
         run: |
           bash -n scripts/apply.sh
@@ -25,4 +31,5 @@ jobs:
           bash -n certbot/renewal-hooks/pre/stop-nginx.sh
           bash -n certbot/renewal-hooks/post/start-nginx.sh
           node --check scripts/apply_presets.js
+          node --check scripts/memo_docx.js
           python -m py_compile scripts/validate.py scripts/check_models.py scripts/build_presets.py scripts/judge.py scripts/gate_check.py scripts/bench.py scripts/longctx.py

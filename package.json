@@ -1,0 +1,9 @@
+{
+  "name": "poly-mind-infra",
+  "private": true,
+  "description": "Only to build docs/памятка.docx (scripts/memo_docx.js)",
+  "dependencies": {
+    "docx": "9.7.1",
+    "jszip": "3.10.1"
+  }
+}
