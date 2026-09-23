@@ -109,7 +109,7 @@ def check_slots(endpoints: dict[str, dict]) -> None:
         for cat in categories:
             for m in vendor.get(cat) or []:
                 where = f"slots.yaml {name}/{cat} {m.get('id')!r}"
-                for field in ("id", "presetId", "label", "line", "out_per_m"):
+                for field in ("id", "presetId", "label", "line", "out_per_m", "purpose"):
                     if m.get(field) in (None, ""):
                         errors.append(f"{where}: missing {field}")
                 if m.get("presetId") in seen:
@@ -129,7 +129,7 @@ def check_slots(endpoints: dict[str, dict]) -> None:
         errors.append(f"slots.yaml: line {dup!r} is used by more than one slot - helpers could not tell them apart")
     for h in slots.get("helpers") or []:
         where = f"slots.yaml helper {h.get('title')!r}"
-        for field in ("presetId", "title", "slot"):
+        for field in ("presetId", "title", "slot", "purpose"):
             if not h.get(field):
                 errors.append(f"{where}: missing {field}")
         if "model" in h:
@@ -153,6 +153,12 @@ def check_slots(endpoints: dict[str, dict]) -> None:
         return
     if generated != PRESETS_PATH.read_text(encoding="utf-8"):
         errors.append("presets.json is not what slots.yaml generates - edit slots.yaml, run scripts/build_presets.py")
+    memo = build_presets.MEMO_PATH.read_text(encoding="utf-8")
+    try:
+        if build_presets.memo_with_menu(slots, memo) != memo:
+            errors.append("docs/памятка.md: the menu table is not what slots.yaml generates - run scripts/build_presets.py")
+    except SystemExit as e:
+        errors.append(str(e))
 
 
 def main() -> int:

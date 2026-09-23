@@ -15,8 +15,14 @@ bottom as in slots.yaml), then the owner's `rank` inside the category
 (1 = strongest, decided on the evidence in docs/), then vendor order, then
 the dearer one first. A new version inherits its slot's rank.
 
-Usage: python scripts/build_presets.py           # writes presets/presets.json
-       python scripts/build_presets.py --check   # exit 1 if the file is stale
+It also writes the menu table at the end of docs/памятка.md (between the
+menu:begin / menu:end markers): every button with its model and the same
+price marker as the title, so the памятка's prices follow OpenRouter too.
+The памятка is written first, because the helper «❓ Какую кнопку?» carries
+it in its promptPrefix.
+
+Usage: python scripts/build_presets.py           # writes presets.json and the памятка's menu
+       python scripts/build_presets.py --check   # exit 1 if either is stale
 """
 import json
 import sys
@@ -27,6 +33,9 @@ import yaml
 ROOT = Path(__file__).resolve().parent.parent
 SLOTS_PATH = ROOT / "models" / "slots.yaml"
 PRESETS_PATH = ROOT / "presets" / "presets.json"
+MEMO_PATH = ROOT / "docs" / "памятка.md"
+MENU_BEGIN = "<!-- menu:begin"
+MENU_END = "<!-- menu:end -->"
 
 # Fields every preset carries besides the ones derived from slots.yaml.
 PRESET_DEFAULTS = {
@@ -110,6 +119,31 @@ def helper_presets(slots: dict) -> list[dict]:
     return out
 
 
+def menu_table(slots: dict) -> str:
+    """The памятка's «Меню сверху вниз»: helpers, then models, in menu order."""
+    rows = ["| Кнопка | Цена | Внутри / для чего |", "|---|---|---|",
+            "| **Кнопки с готовым порядком работы** | | |"]
+    for h in slots.get("helpers") or []:
+        m = slot_model(slots, h["slot"])
+        n, colour = price_marker(m["out_per_m"], slots)
+        rows.append(f"| **{h['title']}** | {colour} x{n} | {m['label']} · {h.get('purpose', '')} |")
+    icons = ", ".join(f"{c['icon']} {c['title']}" for c in slots["categories"].values())
+    rows.append(f"| **Просто модели: {icons}** | | |")
+    for _vendor, category, m in iter_models(slots):
+        n, colour = price_marker(m["out_per_m"], slots)
+        rows.append(f"| **{slots['categories'][category]['icon']} {m['label']}** | {colour} x{n} | {m.get('purpose', '')} |")
+    return "\n".join(rows)
+
+
+def memo_with_menu(slots: dict, text: str) -> str:
+    """The памятка with its menu table regenerated between the markers."""
+    begin, end = text.find(MENU_BEGIN), text.find(MENU_END)
+    if begin < 0 or end < begin:
+        raise SystemExit("ERROR: docs/памятка.md has no menu:begin / menu:end markers")
+    head_end = text.index("-->", begin) + 3
+    return text[:head_end] + "\n" + menu_table(slots) + "\n" + text[end:]
+
+
 def build(slots: dict) -> dict:
     presets = helper_presets(slots)
     for order, (vendor, category, model) in enumerate(iter_models(slots), start=1):
@@ -130,16 +164,28 @@ def render(data: dict) -> str:
 
 
 def main() -> int:
-    data = build(load_slots())
-    text = render(data)
+    slots = load_slots()
+    memo_now = MEMO_PATH.read_text(encoding="utf-8")
+    memo = memo_with_menu(slots, memo_now)
     if "--check" in sys.argv:
+        bad = memo != memo_now
+        if bad:
+            print("ERROR: the menu in docs/памятка.md is not what models/slots.yaml generates - "
+                  "run scripts/build_presets.py")
         current = PRESETS_PATH.read_text(encoding="utf-8") if PRESETS_PATH.exists() else ""
-        if current != text:
+        if current != render(build(slots)):
+            bad = True
             print("ERROR: presets/presets.json is not what models/slots.yaml generates - "
                   "edit slots.yaml and run scripts/build_presets.py")
+        if bad:
             return 1
-        print("ok: presets.json matches slots.yaml")
+        print("ok: presets.json and the памятка's menu match slots.yaml")
         return 0
+    if memo != memo_now:
+        MEMO_PATH.write_text(memo, encoding="utf-8", newline="\n")
+        print("wrote docs/памятка.md: menu")
+    data = build(slots)
+    text = render(data)
     PRESETS_PATH.write_text(text, encoding="utf-8", newline="\n")
     print(f"wrote {PRESETS_PATH.relative_to(ROOT)}: {len(data['presets'])} presets")
     return 0

@@ -1,0 +1,46 @@
+# docs/памятка.md is the one source of truth; docs/памятка.docx (the Word
+# памятка the mother keeps) is rebuilt from it here after every merge that
+# touches it - including the monthly model refresh, which rewrites the menu
+# table and prices in the .md. Nobody rebuilds the .docx by hand.
+# The commit is made with GITHUB_TOKEN, so it triggers no other workflow.
+name: Memo
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "docs/памятка.md"
+      - "scripts/memo_docx.js"
+      - "package.json"
+      - "package-lock.json"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: memo
+  cancel-in-progress: false
+
+jobs:
+  rebuild:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - run: npm ci --no-audit --no-fund
+      - name: Rebuild the Word памятка if the .md changed
+        run: |
+          if node scripts/memo_docx.js --check; then
+            echo "docs/памятка.docx is current" >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          node scripts/memo_docx.js
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/памятка.docx
+          git commit -m "Rebuild docs/памятка.docx from docs/памятка.md"
+          git push
+          echo "docs/памятка.docx rebuilt and committed" >> "$GITHUB_STEP_SUMMARY"

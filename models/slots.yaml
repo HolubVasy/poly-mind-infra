@@ -23,6 +23,8 @@
 #               only kind of candidate it proposes (Opus 5 -> Opus 5.5).
 #   out_per_m - output price in USD per 1M tokens, as OpenRouter reports it;
 #               refreshed by scripts/check_models.py --update-prices, never typed
+#   purpose   - one line for the menu table in docs/памятка.md: what the
+#               button is for. Stays when a newer version replaces the model.
 #   rank      - place inside the category in the menu, 1 = strongest; the
 #               owner's call on the evidence in docs/ (bench and long-context
 #               runs of 2026-09-22/23). Models without a rank go after the
@@ -56,17 +58,20 @@ common_prefix: |
 helpers:
   - presetId: 5b7c1c2e-9a0f-4c1d-8f3a-2e6d7a1b4c90
     title: "❓ Какую кнопку?"
+    purpose: "подсказать, какую кнопку жать"
     slot: luna-pro
     instructions_file: docs/памятка.md
     intro: |
       Ты помощник по выбору кнопки (модели) в этом чате. Пользователь описывает
       задачу - ответь коротко, в 2-4 строках: какую кнопку взять (значок и
-      название), почему одной фразой, и какую фразу написать первой строкой
-      запроса. Если документ длинный - напомни про два шага. Не делай саму
-      задачу, только подскажи кнопку. Правила ниже - единственный источник.
+      название), почему одной фразой, и что приложить или написать первой
+      строкой, если это нужно. Если документ длинный - напомни про два шага.
+      Не делай саму задачу, только подскажи кнопку. Памятка ниже -
+      единственный источник.
 
   - presetId: 8e2f4a6c-1b3d-4e5f-9a7b-0c1d2e3f4a5b
     title: "🧭 Новый вопрос"
+    purpose: "любой вопрос: сначала уточнит, потом ответит"
     slot: opus
     instructions: |
       Порядок работы с любым вопросом.
@@ -82,6 +87,7 @@ helpers:
 
   - presetId: 3c9d1e7f-5a2b-4c8d-b6e0-7f1a2b3c4d5e
     title: "✏️ Править текст"
+    purpose: "исправить свой текст, не меняя смысла и стиля"
     slot: fable
     instructions: |
       Ты редактор научных текстов на русском языке. Пользователь присылает
@@ -98,6 +104,7 @@ helpers:
 
   - presetId: 6a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d
     title: "🔍 Рецензия"
+    purpose: "проверить статью или диплом: ошибки по пунктам"
     slot: astra-pro
     instructions: |
       Ты рецензент научного журнала по химии и материаловедению. Пользователь
@@ -117,6 +124,7 @@ helpers:
 
   - presetId: 9f8e7d6c-5b4a-4938-a271-6c5d4e3f2a1b
     title: "🎛 Варианты"
+    purpose: "пять вариантов решения или улучшения"
     slot: opus
     instructions: |
       Пользователь описывает задачу или решение. Не давай одного ответа -
@@ -150,30 +158,30 @@ vendors:
   - name: Claude
     prefix: anthropic/
     flagship:
-      - { id: anthropic/claude-fable-5.1, presetId: b8d5531b-257e-4869-ada5-3c96cfae7b2b, label: "Fable 5.1", line: fable,  out_per_m: 50.0, rank: 1 }
+      - { id: anthropic/claude-fable-5.1, presetId: b8d5531b-257e-4869-ada5-3c96cfae7b2b, label: "Fable 5.1", line: fable,  out_per_m: 50.0, rank: 1, purpose: "Править текст. Не для текстов длиннее 40 страниц" }
     workhorse:
-      - { id: anthropic/claude-opus-5.5,  presetId: 794f02de-4ec5-49c2-84af-600994a2a41d, label: "Opus 5.5",  line: opus,   out_per_m: 20.0, rank: 2 }
+      - { id: anthropic/claude-opus-5.5,  presetId: 794f02de-4ec5-49c2-84af-600994a2a41d, label: "Opus 5.5",  line: opus,   out_per_m: 20.0, rank: 2, purpose: "Всё, когда не знаешь" }
     cheap: []
 
   - name: OpenAI
     prefix: openai/
     flagship:
-      - { id: openai/gpt-6-astra-pro,   presetId: ff117436-ed01-4691-82a5-3bd77a1bf058, label: "GPT-6 Astra Pro",   line: astra-pro, out_per_m: 50.0, rank: 2 }
+      - { id: openai/gpt-6-astra-pro,   presetId: ff117436-ed01-4691-82a5-3bd77a1bf058, label: "GPT-6 Astra Pro",   line: astra-pro, out_per_m: 50.0, rank: 2, purpose: "Большие документы, поиск литературы" }
     workhorse:
-      - { id: openai/gpt-5.6-terra-pro, presetId: 275eb791-c305-416d-a53a-e95fb93b4a0b, label: "GPT-5.6 Terra Pro", line: terra-pro, out_per_m: 12.0, rank: 3 }
+      - { id: openai/gpt-5.6-terra-pro, presetId: 275eb791-c305-416d-a53a-e95fb93b4a0b, label: "GPT-5.6 Terra Pro", line: terra-pro, out_per_m: 12.0, rank: 3, purpose: "Запасная для больших документов" }
     cheap:
-      - { id: openai/gpt-6-luna-pro,    presetId: aab73c92-3187-4396-b5bd-ee305dffaa17, label: "GPT-6 Luna Pro",    line: luna-pro,  out_per_m: 0.5, rank: 1 }
+      - { id: openai/gpt-6-luna-pro,    presetId: aab73c92-3187-4396-b5bd-ee305dffaa17, label: "GPT-6 Luna Pro",    line: luna-pro,  out_per_m: 0.5, rank: 1, purpose: "Мелочь, быт, черновик" }
 
   - name: Gemini
     prefix: google/
     flagship: []
     workhorse: []
     cheap:
-      - { id: google/gemini-3.8-flash, presetId: dcd5732f-6ace-4ad8-b965-97dbb6a13229, label: "Gemini 3.8 Flash", line: flash, out_per_m: 3.75, rank: 2 }
+      - { id: google/gemini-3.8-flash, presetId: dcd5732f-6ace-4ad8-b965-97dbb6a13229, label: "Gemini 3.8 Flash", line: flash, out_per_m: 3.75, rank: 2, purpose: "Быстрый вопрос, быт" }
 
   - name: Grok
     prefix: x-ai/
     flagship: []
     workhorse:
-      - { id: x-ai/grok-4.7, presetId: 07dbbec8-c752-480c-b036-2143241c052b, label: "Grok 4.7", line: grok, out_per_m: 4.8, rank: 1 }
+      - { id: x-ai/grok-4.7, presetId: 07dbbec8-c752-480c-b036-2143241c052b, label: "Grok 4.7", line: grok, out_per_m: 4.8, rank: 1, purpose: "Статья или НИР до 20 страниц" }
     cheap: []

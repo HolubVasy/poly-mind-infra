@@ -12,9 +12,10 @@ Anything else is a problem and the change must not become a pull request.
 
 Helpers (procedure buttons) name a slot's `line`, so they move with it; the
 digest says which buttons moved. A replaced model's old label must be gone
-from docs/памятка.md - the helper «❓ Какую кнопку?» reads it and would
-otherwise send the mother to a button that no longer exists - and from
-scripts/memo_docx.js, which builds her Word памятка.
+from docs/памятка.md - the helper «❓ Какую кнопку?» reads it, her Word
+памятка is built from it, and she would otherwise look for a button that no
+longer exists. (The .md names models without versions and its menu table is
+generated, so this rarely fires; it is the safety net.)
 
 Also prints one short Russian line per change (".digest" in the JSON) for
 the Telegram message: what was replaced, why, and what it costs now.
@@ -34,9 +35,7 @@ import yaml
 ROOT = Path(__file__).resolve().parent.parent
 SLOTS_PATH = ROOT / "models" / "slots.yaml"
 LOG_PATH = ROOT / "docs" / "model-log.md"
-# Both памятки name models by their labels: the .md (read by «❓ Какую
-# кнопку?») and the generator of the Word one she keeps.
-MEMO_PATHS = [ROOT / "docs" / "памятка.md", ROOT / "scripts" / "memo_docx.js"]
+MEMO_PATHS = [ROOT / "docs" / "памятка.md"]
 
 ENTRY = re.compile(r"^## (\d{4}-\d{2}-\d{2}) · (.+?): `([^`]+)` vs `([^`]+)` -> \*\*(\w+)\*\*", re.M)
 VERDICT_RU = {"better": "судья: лучше", "equal": "судья: не хуже"}
