@@ -20,7 +20,7 @@
 ## Не делаем
 - Не переписываем прошлые отчёты: строки Terra в `bench-2026-09-22/23.md`, `longctx-2026-09-23*.md` и таблицах `model-evaluation-2026-09.md` - это измерения.
 - Не меняем ранг: Sol наследует место Terra (Grok, Opus, Sol).
-- `docs/памятка.docx` пересоберёт `memo.yml` после merge.
+- `docs/памятка.docx` пересобран в этом PR (`memo_docx.js --check` ok); `memo.yml` после merge ничего не изменит.
 
 ## Как проверим
 1. `validate.py` зелёный.
