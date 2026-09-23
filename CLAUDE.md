@@ -30,7 +30,7 @@ Not in this repository, on purpose:
 | `librechat/docker-compose.override.yml` | `/opt/LibreChat/docker-compose.override.yml` | Pins the LibreChat image, mounts |
 | `librechat/secrets-generation` | `/opt/LibreChat/.secrets-generation` | A bare number; raising it makes `apply.sh` rotate the secrets in `.env` on the server |
 | `librechat/deploy-compose.yml` | `/opt/LibreChat/deploy-compose.yml` | Only its `client` service (LibreChat-NGINX) is used |
-| `nginx/nginx.conf` | `/opt/LibreChat/client/nginx.conf` | TLS, basic auth, proxy for chat and forpost |
+| `nginx/nginx.conf` | `/opt/LibreChat/client/nginx.conf` | TLS, basic auth, proxy for chat, forpost and jobs |
 | `certbot/renewal-hooks/{pre,post}/*.sh` | `/etc/letsencrypt/renewal-hooks/...` | Stop/start nginx around cert renewal |
 | `models/slots.yaml` | - | Which models the chat offers: vendor x category, with prices. Source of `presets.json` |
 | `presets/presets.json` | MongoDB `LibreChat.presets` | The presets in the chat's preset menu. Generated, do not edit |
@@ -231,8 +231,10 @@ Manual run: Actions -> Balance -> Run workflow (dry run by default).
 - Containers: `LibreChat` (image pinned by digest in the override - the current
   upstream image refuses the default `JWT_SECRET`), `LibreChat-NGINX`,
   `chat-mongodb`, `chat-meilisearch`, `vectordb`, `rag_api`, `forpost`, and the
-  job-search `job_search_db` (managed from its own repo, not here).
-- DNS at Namecheap: only `chat` and `forpost` A records, both to this host.
+  job-search `job_search_db` and `job_search_app` (managed from their own repo,
+  not here; nginx proxies `jobs.poly-mind.net` to `job_search_app:8501`, no
+  login by the owner's decision 2026-09-23).
+- DNS at Namecheap: `chat`, `forpost` and `jobs` A records, all to this host.
 - Certificates: host `certbot.timer`, standalone on port 80; the hooks stop and
   start `LibreChat-NGINX`. `ufw` allows 80/tcp for that. Docker publishes
   container ports around `ufw`, so `ufw` protects nothing else.
