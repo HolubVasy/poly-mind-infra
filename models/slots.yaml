@@ -170,7 +170,7 @@ vendors:
     flagship:
       - { id: anthropic/claude-fable-5.1, presetId: b8d5531b-257e-4869-ada5-3c96cfae7b2b, label: "Fable 5.1", line: fable,  out_per_m: 50.0, rank: 1, max_context: 100000, purpose: "Править текст. Не для текстов длиннее 40 страниц" }
     workhorse:
-      - { id: anthropic/claude-opus-5.5,  presetId: 794f02de-4ec5-49c2-84af-600994a2a41d, label: "Opus 5.5",  line: opus,   out_per_m: 20.0, rank: 2, purpose: "Всё, когда не знаешь" }
+      - { id: anthropic/claude-opus-5.5,  presetId: 794f02de-4ec5-49c2-84af-600994a2a41d, label: "Opus 5.5",  line: opus,   out_per_m: 20.0, rank: 3, purpose: "Всё, когда не знаешь" }
     cheap: []
 
   - name: OpenAI
@@ -178,7 +178,7 @@ vendors:
     flagship:
       - { id: openai/gpt-6-astra-pro,   presetId: ff117436-ed01-4691-82a5-3bd77a1bf058, label: "GPT-6 Astra Pro",   line: astra-pro, out_per_m: 50.0, rank: 2, purpose: "Большие документы, поиск литературы" }
     workhorse:
-      - { id: openai/gpt-6-sol-pro,     presetId: 275eb791-c305-416d-a53a-e95fb93b4a0b, label: "GPT-6 Sol Pro",     line: sol-pro,   out_per_m: 10.0, rank: 3, purpose: "Запасная для больших документов" }
+      - { id: openai/gpt-6-sol-pro,     presetId: 275eb791-c305-416d-a53a-e95fb93b4a0b, label: "GPT-6 Sol Pro",     line: sol-pro,   out_per_m: 10.0, rank: 2, purpose: "Запасная для больших документов" }
     cheap:
       - { id: openai/gpt-6-luna-pro,    presetId: aab73c92-3187-4396-b5bd-ee305dffaa17, label: "GPT-6 Luna Pro",    line: luna-pro,  out_per_m: 0.5, rank: 1, purpose: "Мелочь, быт, черновик" }
 

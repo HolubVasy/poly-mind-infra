@@ -11,7 +11,7 @@
 - Цена выхода: $10 против $12 за 1M.
 
 ## Требования
-1. `models/slots.yaml`: слот OpenAI workhorse - `openai/gpt-6-sol-pro`, label `GPT-6 Sol Pro`, line `sol-pro`, `out_per_m: 10.0`. `presetId` 275eb791-c305-416d-a53a-e95fb93b4a0b, `rank: 3` и `purpose` прежние.
+1. `models/slots.yaml`: слот OpenAI workhorse - `openai/gpt-6-sol-pro`, label `GPT-6 Sol Pro`, line `sol-pro`, `out_per_m: 10.0`. `presetId` 275eb791-c305-416d-a53a-e95fb93b4a0b, `purpose` прежний. `rank: 2`, у Opus 5.5 `rank: 3`: Sol сразу после Grok (владелец, 2026-09-23).
 2. `librechat/librechat.yaml`: в списке «Все» `openai/gpt-6-sol-pro` вместо `openai/gpt-5.6-terra-pro`.
 3. `presets/presets.json` и таблица меню в `docs/памятка.md` пересобраны `build_presets.py`: заголовок `⚙️ GPT-6 Sol Pro · 🟢 x4`.
 4. Terra не упоминается как текущая модель нигде: CLAUDE.md (таблица полок, порядок меню, пример `line`), комментарий `line` в `slots.yaml`, раздел решений в `docs/model-evaluation-2026-09.md`.
@@ -19,12 +19,11 @@
 
 ## Не делаем
 - Не переписываем прошлые отчёты: строки Terra в `bench-2026-09-22/23.md`, `longctx-2026-09-23*.md` и таблицах `model-evaluation-2026-09.md` - это измерения.
-- Не меняем ранг: Sol наследует место Terra (Grok, Opus, Sol).
 - `docs/памятка.docx` пересобран в этом PR (`memo_docx.js --check` ok); `memo.yml` после merge ничего не изменит.
 
 ## Как проверим
 1. `validate.py` зелёный.
-2. После деплоя в меню `⚙️ GPT-6 Sol Pro · 🟢 x4` на месте Terra, тот же presetId.
+2. После деплоя в меню `⚙️ GPT-6 Sol Pro · 🟢 x4` сразу после Grok, выше Opus, тот же presetId.
 3. Вопрос этой кнопке виден в OpenRouter как `openai/gpt-6-sol-pro`.
 
 ## Риск и откат

@@ -132,6 +132,8 @@ judges Fable and Grok: Sol 0.60, Terra 0.40 - Sol took method, sources and
 shrink, Terra edit and terms (`docs/bench-2026-09-23-sol.md`). Long context:
 8/8 with no false alarms at 100k and 200k, as Terra
 (`docs/longctx-2026-09-23-sol.md`). And $10 against $12 per 1M output.
+Sol sits right after Grok, above Opus (rank 2, Opus 3) - owner's call,
+2026-09-23.
 
 Preset = slot: a new version replaces the entry in place and keeps its
 `presetId`, so the mother sees the same preset with a new version.
@@ -148,7 +150,7 @@ rounded; colour `⚪️` up to x1, `🟢` up to x7, `🔴` above (thresholds in
 `build_presets.py` assigns it - category top to bottom, then the owner's
 `rank` inside the category (1 = strongest, set in `slots.yaml` on the evidence
 in `docs/`: bench and long-context runs), then vendor order, then the dearer
-model first. As of 2026-09-23: Fable, Astra Pro; Grok, Opus, Sol; Luna,
+model first. As of 2026-09-23: Fable, Astra Pro; Grok, Sol, Opus; Luna,
 Flash. A new version inherits its slot's rank; the rank changes only on the
 owner's word. Known limit: Fable 5.1 does not finish on documents of 100k+
 tokens (three runs) - for those, Astra Pro or Opus.
