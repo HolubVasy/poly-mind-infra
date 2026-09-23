@@ -222,6 +222,12 @@ digest first). Keep it in step with the menu. It is also the instruction
 text of the helper preset «❓ Какую кнопку?» (`helpers:` in `slots.yaml`):
 `build_presets.py` copies the file into the preset's `promptPrefix`, so the
 rules have one home and a merged edit of the памятка updates the button.
+Four more helpers are procedure buttons with inline `instructions` and a
+model baked in: 🧭 Новый вопрос (Opus 5.5), ✏️ Править текст (Fable 5.1),
+🔍 Рецензия (Astra Pro), 🎛 Варианты (Opus 5.5). Every preset, model buttons
+included, starts with `common_prefix` from `slots.yaml` - the owner's line
+«Ничего не додумывай… Не знаешь - так и скажи» - because inventing and
+guessing were the two failure modes the tests showed.
 
 Lessons already paid for - do not repeat:
 - The live files are single-file bind mounts. Rewrite them in place

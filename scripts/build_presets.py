@@ -72,18 +72,28 @@ def iter_models(slots: dict):
             yield vendor, category, model
 
 
+def with_common(slots: dict, text: str) -> str:
+    """Every preset starts with the owner's one line that blocks the two
+    failure modes seen in the tests: inventing, and guessing instead of
+    saying "I do not know"."""
+    common = (slots.get("common_prefix") or "").strip()
+    return (common + "\n\n" + text).strip() if common else text.strip()
+
+
 def helper_presets(slots: dict) -> list[dict]:
-    """Buttons with instructions instead of a model choice; the instructions
-    come from a file in the repo, so the rules have one home."""
+    """Buttons with a procedure instead of a model choice: a model and
+    instructions baked in, so the rule lives in the button."""
     out = []
     for i, h in enumerate(slots.get("helpers") or []):
-        text = (ROOT / h["instructions_file"]).read_text(encoding="utf-8").strip()
+        text = (h.get("instructions") or "").strip()
+        if h.get("instructions_file"):
+            text = (text + "\n\n" + (ROOT / h["instructions_file"]).read_text(encoding="utf-8").strip()).strip()
         out.append({
             "presetId": h["presetId"],
             "endpoint": slots["endpoint"],
             "model": h["model"],
             "title": h["title"],
-            "promptPrefix": (h.get("intro", "").strip() + "\n\n" + text).strip(),
+            "promptPrefix": with_common(slots, (h.get("intro", "").strip() + "\n\n" + text).strip()),
             "order": -len(slots["helpers"]) + i,
             **PRESET_DEFAULTS,
         })
@@ -99,6 +109,7 @@ def build(slots: dict) -> dict:
             "model": model["id"],
             "title": title_for(vendor, category, model, slots),
             "order": order,
+            "promptPrefix": with_common(slots, ""),
             **PRESET_DEFAULTS,
         })
     return {"presets": presets}

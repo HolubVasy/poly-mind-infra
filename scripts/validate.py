@@ -126,9 +126,11 @@ def check_slots(endpoints: dict[str, dict]) -> None:
                     errors.append(f"{where}: rank must be a whole number from 1")
     for h in slots.get("helpers") or []:
         where = f"slots.yaml helper {h.get('title')!r}"
-        for field in ("presetId", "title", "model", "instructions_file"):
+        for field in ("presetId", "title", "model"):
             if not h.get(field):
                 errors.append(f"{where}: missing {field}")
+        if not (h.get("instructions") or h.get("instructions_file")):
+            errors.append(f"{where}: needs instructions or instructions_file")
         if h.get("presetId") in seen:
             errors.append(f"{where}: presetId used twice")
         if h.get("model") not in listed:
