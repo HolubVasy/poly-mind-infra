@@ -128,7 +128,8 @@ rounded; colour `⚪️` up to x1, `🟢` up to x7, `🔴` above (thresholds in
 in `docs/`: bench and long-context runs), then vendor order, then the dearer
 model first. As of 2026-09-23: Fable, Astra Pro; Grok, Opus, Terra; Luna,
 Flash. A new version inherits its slot's rank; the rank changes only on the
-owner's word.
+owner's word. Known limit: Fable 5.1 does not finish on documents of 100k+
+tokens (three runs) - for those, Astra Pro or Opus.
 
 **The rule that broke the presets on 2026-09-22:** a preset's `model` must be in
 the `models.default` list of its `endpoint` in `librechat.yaml`. If it is not,

@@ -262,11 +262,14 @@ def load_models(only: list[str] | None, extra: list[str]) -> list[dict]:
 
 
 def main() -> int:
+    global MAX_TOKENS
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--tokens", default="50000,200000")
     ap.add_argument("--models")
     ap.add_argument("--extra", default="")
-    ap.add_argument("--plants", type=int, default=8)
+    ap.add_argument("--plants", default="8", help="one number, or one per size: 3,5,8")
+    ap.add_argument("--max-tokens", type=int, default=MAX_TOKENS,
+                    help="answer budget; 8000 keeps a reasoning model from thinking for $3")
     ap.add_argument("--seed", type=int, default=7)
     ap.add_argument("--workers", type=int, default=4)
     ap.add_argument("--out")
@@ -274,8 +277,14 @@ def main() -> int:
     args = ap.parse_args()
 
     sizes = [int(x) for x in args.tokens.split(",") if x]
+    plants_per = [int(x) for x in args.plants.split(",") if x]
+    if len(plants_per) == 1:
+        plants_per *= len(sizes)
+    if len(plants_per) != len(sizes):
+        sys.exit("--plants: one number, or exactly one per size")
+    MAX_TOKENS = args.max_tokens
     models = load_models(args.models.split(",") if args.models else None, [e for e in args.extra.split(",") if e])
-    docs = {n: build(n, args.plants, args.seed) for n in sizes}
+    docs = {n: build(n, k, args.seed) for n, k in zip(sizes, plants_per)}
     for n, (text, plants) in docs.items():
         print(f"~{n} tokens: {len(text)} chars, {len(plants)} plants", file=sys.stderr)
         for p in plants:
@@ -314,10 +323,11 @@ def main() -> int:
     day = datetime.now(timezone.utc).date().isoformat()
     out = Path(args.out) if args.out else ROOT / "docs" / f"longctx-{day}.md"
     lines = [f"# Длинный контекст {day}", "",
-             f"Рукопись генерируется из seed {args.seed}; в неё зашито по {args.plants} противоречий "
+             f"Рукопись генерируется из seed {args.seed}; в неё зашито {'/'.join(map(str, plants_per))} противоречий "
              "(один и тот же параметр одного образца указан в двух местах по-разному). Модель должна найти все. "
              "Проверка по ключу, без судьи. «Нашла» - сколько из зашитых, «выдумала» - сколько названных "
-             f"пар образец/параметр в ключе нет. F1 объединяет обе. Стоимость: ${cost:.2f}.", ""]
+             f"пар образец/параметр в ключе нет. F1 объединяет обе. Лимит ответа {MAX_TOKENS} токенов. "
+             f"Стоимость: ${cost:.2f}.", ""]
     for n in sizes:
         plants = docs[n][1]
         real = [results[(n, m["id"])]["usage"].get("prompt_tokens") for m in models]
