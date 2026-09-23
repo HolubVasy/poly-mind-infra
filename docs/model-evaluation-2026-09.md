@@ -166,7 +166,7 @@ history. One Opus 5 answer of 31,277 tokens cost $0.78.
   both judges agreeing on every task (`bench-2026-09-23-sol.md`). Long
   context 8/8, no false alarms, at 100k and 200k, as Terra
   (`longctx-2026-09-23-sol.md`). $10 against $12 per 1M output. Order in the
-  menu: Grok, Opus, Sol (owner). Terra's rows above are kept as measured.
+  menu: Opus, Sol, Grok (owner). Terra's rows above are kept as measured.
 - **Dropped**: Sonnet 5, Kimi K3, DeepSeek V4, GLM 5.3, MiniMax M3.
 - **Opus 5.5 returned** (third in the bench, 8/8 at 200k). Astra Pro kept as
   the OpenAI flagship (same price as plain Astra she used to pick).
