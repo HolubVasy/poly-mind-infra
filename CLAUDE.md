@@ -208,6 +208,15 @@ Rules for whoever edits `slots.yaml`, human or Claude:
 - Registration is closed (`ALLOW_REGISTRATION=false` in `.env`); strangers had
   signed up through `/api`, which is outside basic auth.
 
+`librechat.yaml` keys LibreChat ignores on a custom endpoint: endpoint-level
+`fetch:` and `modelOptions:` (its schema knows only `addParams` / `dropParams`).
+So the `max_tokens: 2048` there caps nothing - the chat log shows answers of
+10k (Fable) and 31k (Opus) completion tokens. Checked 2026-09-23.
+
+`docs/памятка.md` is the one-page guide for the mother: which button for
+which task, sized by document length, big documents in two steps (Astra Pro
+digest first). Keep it in step with the menu.
+
 Lessons already paid for - do not repeat:
 - The live files are single-file bind mounts. Rewrite them in place
   (`cat new > file`); `sed -i`, `cp`, `mv` swap the inode and the container keeps
