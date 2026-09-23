@@ -24,3 +24,8 @@ endpoints:
           "x-ai/grok-4.7"
         ]
       modelDisplayLabel: "Чат"
+      # Conversation titles by the cheap model, not by the one answering:
+      # without this LibreChat titles a Fable chat with Fable, at Fable's
+      # price. Must be in the list above (validate.py); the monthly refresh
+      # moves it together with the Luna slot.
+      titleModel: "openai/gpt-6-luna-pro"

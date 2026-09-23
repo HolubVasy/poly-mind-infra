@@ -48,6 +48,9 @@ def load_endpoints() -> dict[str, dict]:
             errors.append(f"librechat.yaml: endpoint {name!r} has no models.default")
         if len(models) != len(set(models)):
             errors.append(f"librechat.yaml: endpoint {name!r} lists a model twice")
+        title_model = ep.get("titleModel")
+        if title_model and title_model != "current_model" and title_model not in models:
+            errors.append(f"librechat.yaml: endpoint {name!r} titleModel {title_model!r} is not in its models.default")
         if "fetch" in ep:
             # LibreChat reads models.fetch; a `fetch:` next to `models:` is ignored.
             warnings.append(f"librechat.yaml: endpoint {name!r} has endpoint-level fetch, which LibreChat ignores")

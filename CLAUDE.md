@@ -162,6 +162,13 @@ the памятка tells the mother what it means. 60k was rejected: after the
 rescaling it would keep about 27 pages and silently drop a 30-page text from
 the second round.
 
+**Conversation titles** are written by `titleModel` of the "Все" endpoint
+(Luna, 2026-09-23). Without it LibreChat titles each chat with the model that
+answers - a Fable chat paid Fable's price for its title, even when the
+message itself was refused by the context cap. `validate.py` requires the
+titleModel to be in the endpoint's list; the monthly refresh moves it with
+the Luna slot.
+
 **The rule that broke the presets on 2026-09-22:** a preset's `model` must be in
 the `models.default` list of its `endpoint` in `librechat.yaml`. If it is not,
 LibreChat does not fail - it silently answers with the FIRST model of that list
