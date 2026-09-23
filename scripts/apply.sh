@@ -87,6 +87,7 @@ if [ "$want" -gt "$have" ]; then
                END { for (n in new) if (!(n in seen)) { print "missing " n > "/dev/stderr"; exit 3 } }' \
       "$LC/.env" > "$tmp" || { log "ERROR: .env lacks one of ${SECRETS[*]} - nothing rotated"; rm -f "$tmp"; exit 1; }
     cp -p "$LC/.env" "$LC/.env.bak-$TS"
+    chmod 600 "$LC/.env.bak-$TS"
     backups+=("$LC/.env")
     cat "$tmp" > "$LC/.env"
     rm -f "$tmp"
@@ -111,6 +112,10 @@ rollback() {
   done
   if [ "$rotated" = 1 ]; then
     recreate_secret_readers
+  fi
+  # A restart keeps the container's image; only compose puts the old image back.
+  if has librechat/docker-compose.override.yml || has librechat/deploy-compose.yml; then
+    (cd "$LC" && docker compose up -d 2>&1 | grep -v 'variable is not set' || true)
   fi
   docker restart LibreChat >/dev/null || true
   docker restart LibreChat-NGINX >/dev/null || true
@@ -147,6 +152,17 @@ if has nginx/nginx.conf; then
   fi
   docker exec LibreChat-NGINX nginx -s reload >/dev/null 2>&1
   log "nginx reloaded"
+fi
+if has librechat/docker-compose.override.yml; then
+  # A new image may migrate the database on its first start, and restoring the
+  # compose file does not undo that - so a dump first, to restore by hand.
+  mkdir -p /root/backup
+  dump="/root/backup/librechat_before_deploy_$TS.archive.gz"
+  docker exec chat-mongodb mongodump --quiet --archive --gzip --db LibreChat > "$dump"
+  chmod 600 "$dump"
+  log "mongo dump $dump ($(du -h "$dump" | cut -f1))"
+  # Pull while the old container still serves, so the downtime is the restart only.
+  (cd "$LC" && docker compose pull -q api 2>&1 | grep -v 'variable is not set' || true)
 fi
 if has librechat/docker-compose.override.yml || has librechat/deploy-compose.yml; then
   (cd "$LC" && docker compose up -d 2>&1 | grep -v 'variable is not set' || true)
