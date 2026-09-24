@@ -14,6 +14,7 @@ scripts in `scripts/` (`bench.py`, `longctx.py`, `judge.py`).
 | **Long context, 50k / 200k tokens** | seed-generated manuscript with 8 planted contradictions | key (no judge) | ~$17 incl. two retries |
 | **Long context, tiered 7k / 13k / 100k** | same, 3 / 5 / 8 plants, answer budget 8k | key | $5.72 |
 | **Sol Pro vs Terra Pro** (23 Sep) | bench 2 models x 5 tasks; long context 100k / 200k for Sol | 2 judges (Astra Pro skips OpenAI); key | $0.92 + $1.59 |
+| **o3 vs the workhorses** (24 Sep) | bench, o3 as a guest against Opus 5.5, Sol Pro, Grok 4.7 x 5 tasks | 3 judges, blind, Borda | $1.67 |
 | **Pairwise judge** (`judge.py`) | candidate vs current on one standard prompt | 1 judge, blind | cents per pair |
 | **Her usage log** | MongoDB `transactions`, Feb-Sep 2026 | - | free |
 
@@ -167,6 +168,12 @@ history. One Opus 5 answer of 31,277 tokens cost $0.78.
   context 8/8, no false alarms, at 100k and 200k, as Terra
   (`longctx-2026-09-23-sol.md`). $10 against $12 per 1M output. Order in the
   menu: Opus, Sol, Grok (owner). Terra's rows above are kept as measured.
+- **OpenAI o3 not added** (24 Sep). A chat answer built on the summer-2025
+  catalogue recommended o3 / o3-pro for method critique. o3 ($2 / $8, 200k
+  context) against the workhorses: Opus 0.85, Grok 0.60, Sol 0.45, o3 0.10 -
+  last in 8 of 10 rankings, below Grok on every task and every judge
+  (`bench-2026-09-24-o3.md`). o3-pro was not run: $20 / $80, dearer than
+  Astra Pro, 200k context.
 - **Dropped**: Sonnet 5, Kimi K3, DeepSeek V4, GLM 5.3, MiniMax M3.
 - **Opus 5.5 returned** (third in the bench, 8/8 at 200k). Astra Pro kept as
   the OpenAI flagship (same price as plain Astra she used to pick).

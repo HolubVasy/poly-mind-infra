@@ -134,6 +134,8 @@ shrink, Terra edit and terms (`docs/bench-2026-09-23-sol.md`). Long context:
 (`docs/longctx-2026-09-23-sol.md`). And $10 against $12 per 1M output.
 Workhorse order Opus, Sol, Grok (ranks 1, 2, 3) - owner's call,
 2026-09-23, after trying Grok first.
+OpenAI o3 was tried as a guest on 2026-09-24 and came last among the
+workhorses (`docs/bench-2026-09-24-o3.md`); not added.
 
 Preset = slot: a new version replaces the entry in place and keeps its
 `presetId`, so the mother sees the same preset with a new version.
