@@ -193,5 +193,5 @@ vendors:
     prefix: x-ai/
     flagship: []
     workhorse:
-      - { id: x-ai/grok-4.7, presetId: 07dbbec8-c752-480c-b036-2143241c052b, label: "Grok 4.7", line: grok, out_per_m: 4.8, rank: 3, purpose: "Статья или НИР до 20 страниц" }
+      - { id: x-ai/grok-4.7, presetId: 07dbbec8-c752-480c-b036-2143241c052b, label: "Grok 4.7", line: grok, out_per_m: 6, rank: 3, purpose: "Статья или НИР до 20 страниц" }
     cheap: []
