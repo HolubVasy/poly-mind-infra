@@ -113,7 +113,7 @@ and nothing is added to fill a grid. Current set:
 |---|---|---|---|
 | Claude | Fable 5.1 | Opus 5.5 | - |
 | OpenAI | GPT-6 Astra Pro | GPT-6 Sol Pro | GPT-6 Luna Pro |
-| Gemini | - | - | Gemini 3.8 Flash |
+| Gemini | Gemini 4 Argon | - | Gemini 3.8 Flash |
 | Grok | - | Grok 4.7 | - |
 
 Iteration 2, 2026-09-23, decided on evidence: two blind bench runs
@@ -173,13 +173,19 @@ the памятка tells the mother what it means. 60k was rejected: after the
 rescaling it would keep about 27 pages and silently drop a 30-page text from
 the second round.
 
+**Gemini 4 Argon (2026-10-16), owner's call, a conscious exception.** Added
+as the Gemini flagship without a bench or long-text run, against the rule that
+the bench decides. Purpose: checking a text for consistency and compliance
+with standards and rules. No rank until it passes both runs. Price is Google's
+launch discount ($10 per 1M output until 2026-11-30, then $20, marker x4 -> x8).
+
 **Reasoning effort (`reasoning_effort`, 2026-10-16).** A slot may carry
 `low`, `medium` or `high`; it becomes `reasoning_effort` of its preset and of
 every helper on that slot. Without it OpenRouter's default for the model
 applies: high for Fable, Opus and Grok, medium for the OpenAI models and
 Gemini. Owner's call: Astra Pro and Sol Pro on high (so 🔍 Рецензия too), the
 rest on their defaults, never xhigh or max; `validate.py` rejects anything
-else. GPT-6.1 Sol Pro is not taken: it lost its verdict on 2026-10-01 (PR #57).
+else. Gemini 4 Argon is on high too. GPT-6.1 Sol Pro is not taken: it lost its verdict on 2026-10-01 (PR #57).
 
 **Conversation titles** are written by `titleModel` of the "Все" endpoint
 (Luna, 2026-09-23). Without it LibreChat titles each chat with the model that
