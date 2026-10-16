@@ -173,9 +173,10 @@ the памятка tells the mother what it means. 60k was rejected: after the
 rescaling it would keep about 27 pages and silently drop a 30-page text from
 the second round.
 
-**Gemini 4 Argon (2026-10-16), owner's call, a conscious exception.** Added
-as the Gemini flagship without a bench or long-text run, against the rule that
-the bench decides. Purpose: checking a text for consistency and compliance
+**Gemini 4 Argon (2026-10-16), owner's call.** Added as the Gemini flagship
+before any bench or long-text run. The owner's rule: the bench overrides his
+call only when a model was measured and lost; an unmeasured model may go in
+and leaves if a later run shows it worse. Purpose: checking a text for consistency and compliance
 with standards and rules. No rank until it passes both runs. Price is Google's
 launch discount ($10 per 1M output until 2026-11-30, then $20, marker x4 -> x8).
 

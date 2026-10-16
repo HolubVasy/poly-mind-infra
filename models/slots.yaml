@@ -192,9 +192,9 @@ vendors:
 
   - name: Gemini
     prefix: google/
-    # Argon: added 2026-10-16 without a bench run, owner's conscious exception
-    # to "the bench decides" (CLAUDE.md). No rank until it passes the bench and
-    # the long-text test. Price is Google's launch discount ($10 out until
+    # Argon: added 2026-10-16, owner's call. Not yet measured; the bench
+    # blocks a model only when it was measured and lost (CLAUDE.md). No rank
+    # until it is benched and passes the long-text test. Price is Google's launch discount ($10 out until
     # 2026-11-30, then $20); the monthly check refreshes it.
     flagship:
       - { id: google/gemini-4-argon, presetId: cb750ab2-ed72-4c81-ba5f-71be24f4c85a, label: "Gemini 4 Argon", line: argon, out_per_m: 10.0, reasoning_effort: high, purpose: "Проверка на соответствие и непротиворечивость. Стандарты, правила, внутренние противоречия" }
