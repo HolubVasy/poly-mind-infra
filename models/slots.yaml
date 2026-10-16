@@ -39,6 +39,14 @@
 #               fail on long input; helpers on that slot inherit it. Stays
 #               when a newer version replaces the model - drop it by PR once
 #               the new version passes the long-text test.
+#   reasoning_effort - optional: low, medium or high. Sent with every request
+#               of the preset (OpenRouter `reasoning.effort`; for Claude
+#               LibreChat maps it to the effort parameter). Without it the
+#               model runs on OpenRouter's default for that model (high for
+#               Fable, Opus and Grok, medium for the OpenAI models and Gemini,
+#               as of 2026-10-16). Owner's call, no xhigh or max (2026-10-16).
+#               Helpers on the slot inherit it, as with max_context. Stays when
+#               a newer version replaces the model.
 #
 # Menu order inside a category: by rank, then by the order of the vendors here.
 # Preset = slot: a new version replaces the entry in place, keeps its presetId,
@@ -176,15 +184,20 @@ vendors:
   - name: OpenAI
     prefix: openai/
     flagship:
-      - { id: openai/gpt-6-astra-pro,   presetId: ff117436-ed01-4691-82a5-3bd77a1bf058, label: "GPT-6 Astra Pro",   line: astra-pro, out_per_m: 50.0, rank: 2, purpose: "Большие документы, поиск литературы" }
+      - { id: openai/gpt-6-astra-pro,   presetId: ff117436-ed01-4691-82a5-3bd77a1bf058, label: "GPT-6 Astra Pro",   line: astra-pro, out_per_m: 50.0, rank: 2, reasoning_effort: high, purpose: "Большие документы, поиск литературы" }
     workhorse:
-      - { id: openai/gpt-6-sol-pro,     presetId: 275eb791-c305-416d-a53a-e95fb93b4a0b, label: "GPT-6 Sol Pro",     line: sol-pro,   out_per_m: 10.0, rank: 2, purpose: "Запасная для больших документов" }
+      - { id: openai/gpt-6-sol-pro,     presetId: 275eb791-c305-416d-a53a-e95fb93b4a0b, label: "GPT-6 Sol Pro",     line: sol-pro,   out_per_m: 10.0, rank: 2, reasoning_effort: high, purpose: "Запасная для больших документов" }
     cheap:
       - { id: openai/gpt-6-luna-pro,    presetId: aab73c92-3187-4396-b5bd-ee305dffaa17, label: "GPT-6 Luna Pro",    line: luna-pro,  out_per_m: 0.5, rank: 1, purpose: "Мелочь, быт, черновик" }
 
   - name: Gemini
     prefix: google/
-    flagship: []
+    # Argon: added 2026-10-16, owner's call. Not yet measured; the bench
+    # blocks a model only when it was measured and lost (CLAUDE.md). No rank
+    # until it is benched and passes the long-text test. Price is Google's launch discount ($10 out until
+    # 2026-11-30, then $20); the monthly check refreshes it.
+    flagship:
+      - { id: google/gemini-4-argon, presetId: cb750ab2-ed72-4c81-ba5f-71be24f4c85a, label: "Gemini 4 Argon", line: argon, out_per_m: 10.0, reasoning_effort: high, purpose: "Проверка на соответствие и непротиворечивость. Стандарты, правила, внутренние противоречия" }
     workhorse: []
     cheap:
       - { id: google/gemini-3.8-flash, presetId: dcd5732f-6ace-4ad8-b965-97dbb6a13229, label: "Gemini 3.8 Flash", line: flash, out_per_m: 3.75, rank: 2, purpose: "Быстрый вопрос, быт" }

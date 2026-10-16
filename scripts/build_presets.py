@@ -104,6 +104,13 @@ def context_cap(model: dict) -> dict:
     return {"maxContextTokens": int(model["max_context"])} if "max_context" in model else {}
 
 
+def effort(model: dict) -> dict:
+    """A model's own reasoning effort (slots.yaml `reasoning_effort`), when it
+    has one; a helper gets the effort of the slot it runs on. Without it the
+    preset carries no effort and OpenRouter's default for the model applies."""
+    return {"reasoning_effort": str(model["reasoning_effort"])} if "reasoning_effort" in model else {}
+
+
 def helper_presets(slots: dict) -> list[dict]:
     """Buttons with a procedure instead of a model choice: a model and
     instructions baked in, so the rule lives in the button. The model is
@@ -122,6 +129,7 @@ def helper_presets(slots: dict) -> list[dict]:
             "order": -len(slots["helpers"]) + i,
             **PRESET_DEFAULTS,
             **context_cap(slot_model(slots, h["slot"])),
+            **effort(slot_model(slots, h["slot"])),
         })
     return out
 
@@ -163,6 +171,7 @@ def build(slots: dict) -> dict:
             "promptPrefix": with_common(slots, ""),
             **PRESET_DEFAULTS,
             **context_cap(model),
+            **effort(model),
         })
     return {"presets": presets}
 
