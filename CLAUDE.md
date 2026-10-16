@@ -173,6 +173,14 @@ the памятка tells the mother what it means. 60k was rejected: after the
 rescaling it would keep about 27 pages and silently drop a 30-page text from
 the second round.
 
+**Reasoning effort (`reasoning_effort`, 2026-10-16).** A slot may carry
+`low`, `medium` or `high`; it becomes `reasoning_effort` of its preset and of
+every helper on that slot. Without it OpenRouter's default for the model
+applies: high for Fable, Opus and Grok, medium for the OpenAI models and
+Gemini. Owner's call: Astra Pro and Sol Pro on high (so 🔍 Рецензия too), the
+rest on their defaults, never xhigh or max; `validate.py` rejects anything
+else. GPT-6.1 Sol Pro is not taken: it lost its verdict on 2026-10-01 (PR #57).
+
 **Conversation titles** are written by `titleModel` of the "Все" endpoint
 (Luna, 2026-09-23). Without it LibreChat titles each chat with the model that
 answers - a Fable chat paid Fable's price for its title, even when the

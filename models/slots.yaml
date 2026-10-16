@@ -39,6 +39,14 @@
 #               fail on long input; helpers on that slot inherit it. Stays
 #               when a newer version replaces the model - drop it by PR once
 #               the new version passes the long-text test.
+#   reasoning_effort - optional: low, medium or high. Sent with every request
+#               of the preset (OpenRouter `reasoning.effort`; for Claude
+#               LibreChat maps it to the effort parameter). Without it the
+#               model runs on OpenRouter's default for that model (high for
+#               Fable, Opus and Grok, medium for the OpenAI models and Gemini,
+#               as of 2026-10-16). Owner's call, no xhigh or max (2026-10-16).
+#               Helpers on the slot inherit it, as with max_context. Stays when
+#               a newer version replaces the model.
 #
 # Menu order inside a category: by rank, then by the order of the vendors here.
 # Preset = slot: a new version replaces the entry in place, keeps its presetId,
@@ -176,9 +184,9 @@ vendors:
   - name: OpenAI
     prefix: openai/
     flagship:
-      - { id: openai/gpt-6-astra-pro,   presetId: ff117436-ed01-4691-82a5-3bd77a1bf058, label: "GPT-6 Astra Pro",   line: astra-pro, out_per_m: 50.0, rank: 2, purpose: "Большие документы, поиск литературы" }
+      - { id: openai/gpt-6-astra-pro,   presetId: ff117436-ed01-4691-82a5-3bd77a1bf058, label: "GPT-6 Astra Pro",   line: astra-pro, out_per_m: 50.0, rank: 2, reasoning_effort: high, purpose: "Большие документы, поиск литературы" }
     workhorse:
-      - { id: openai/gpt-6-sol-pro,     presetId: 275eb791-c305-416d-a53a-e95fb93b4a0b, label: "GPT-6 Sol Pro",     line: sol-pro,   out_per_m: 10.0, rank: 2, purpose: "Запасная для больших документов" }
+      - { id: openai/gpt-6-sol-pro,     presetId: 275eb791-c305-416d-a53a-e95fb93b4a0b, label: "GPT-6 Sol Pro",     line: sol-pro,   out_per_m: 10.0, rank: 2, reasoning_effort: high, purpose: "Запасная для больших документов" }
     cheap:
       - { id: openai/gpt-6-luna-pro,    presetId: aab73c92-3187-4396-b5bd-ee305dffaa17, label: "GPT-6 Luna Pro",    line: luna-pro,  out_per_m: 0.5, rank: 1, purpose: "Мелочь, быт, черновик" }
 
