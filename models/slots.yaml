@@ -44,6 +44,16 @@
 # Preset = slot: a new version replaces the entry in place, keeps its presetId,
 # and the mother sees the same preset with a new version.
 
+# Vendor key `endpoint` (optional): the vendor runs on its own API with the
+# owner's own key instead of OpenRouter, through one of LibreChat's built-in
+# endpoints (`anthropic`). Its presets then carry that endpoint and the model's
+# id on the vendor's API, which build_presets.py derives from `id`: the vendor
+# prefix off, dots to dashes (anthropic/claude-opus-5.5 gives claude-opus-5-5),
+# so a monthly replacement moves the button as before. Such models are not in
+# the "Все" list of librechat.yaml. The key (ANTHROPIC_API_KEY) and the list of
+# models (ANTHROPIC_MODELS) live in /opt/LibreChat/.env, never in this repo.
+# Owner's call, 2026-10-23, while his own Anthropic credit lasts.
+
 endpoint: "Все"
 
 # Hard cap on presets in the chat, so the menu stays readable.
@@ -167,6 +177,7 @@ colours:
 vendors:
   - name: Claude
     prefix: anthropic/
+    endpoint: anthropic
     flagship:
       - { id: anthropic/claude-fable-5.1, presetId: b8d5531b-257e-4869-ada5-3c96cfae7b2b, label: "Fable 5.1", line: fable,  out_per_m: 50.0, rank: 1, max_context: 100000, purpose: "Править текст. Не для текстов длиннее 40 страниц" }
     workhorse:

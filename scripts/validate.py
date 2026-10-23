@@ -22,6 +22,12 @@ YAML_PATH = ROOT / "librechat" / "librechat.yaml"
 PRESETS_PATH = ROOT / "presets" / "presets.json"
 SLOTS_PATH = ROOT / "models" / "slots.yaml"
 
+# Endpoints LibreChat has built in. A slots.yaml vendor may run on one of them
+# with the owner's own key (vendor key `endpoint`); they are not in
+# librechat.yaml, so their models cannot be checked against a models.default
+# list - they are checked against slots.yaml instead.
+BUILTIN_ENDPOINTS = {"anthropic"}
+
 errors: list[str] = []
 warnings: list[str] = []
 
@@ -58,8 +64,22 @@ def load_endpoints() -> dict[str, dict]:
     return endpoints
 
 
+def direct_models(slots: dict) -> dict[str, set[str]]:
+    """Per built-in endpoint, the model ids slots.yaml sends to it."""
+    import build_presets
+    found: dict[str, set[str]] = {}
+    for vendor in slots.get("vendors") or []:
+        if "endpoint" not in vendor or not vendor.get("prefix"):
+            continue
+        for cat in slots.get("categories") or {}:
+            for m in vendor.get(cat) or []:
+                found.setdefault(vendor["endpoint"], set()).add(build_presets.direct_model(vendor, m))
+    return found
+
+
 def check_presets(endpoints: dict[str, dict]) -> None:
     data = json.loads(PRESETS_PATH.read_text(encoding="utf-8"))
+    direct = direct_models(yaml.safe_load(SLOTS_PATH.read_text(encoding="utf-8")))
     presets = data.get("presets")
     if not isinstance(presets, list) or not presets:
         errors.append("presets.json: 'presets' must be a non-empty list")
@@ -77,6 +97,12 @@ def check_presets(endpoints: dict[str, dict]) -> None:
         ids.add(p.get("presetId"))
         titles.add(p.get("title"))
         ep = endpoints.get(p.get("endpoint"))
+        if ep is None and p.get("endpoint") in BUILTIN_ENDPOINTS:
+            if p.get("model") not in direct.get(p["endpoint"], set()):
+                errors.append(f"{where}: model {p.get('model')!r} is not one slots.yaml sends to {p['endpoint']!r}")
+            if "endpointType" in p:
+                errors.append(f"{where}: a built-in endpoint takes no endpointType")
+            continue
         if ep is None:
             errors.append(f"{where}: endpoint {p.get('endpoint')!r} is not in librechat.yaml")
             continue
@@ -106,8 +132,13 @@ def check_slots(endpoints: dict[str, dict]) -> None:
         prefix = vendor.get("prefix") or ""
         if len(vendor.get("flagship") or []) > 1:
             errors.append(f"slots.yaml vendor {name!r}: {len(vendor['flagship'])} flagships - the flagship is ONE model")
+        own = vendor.get("endpoint")
+        if own is not None and own not in BUILTIN_ENDPOINTS:
+            errors.append(f"slots.yaml vendor {name!r}: endpoint {own!r} is not a built-in one {sorted(BUILTIN_ENDPOINTS)}")
+        if own is not None and not prefix:
+            errors.append(f"slots.yaml vendor {name!r}: a vendor on its own endpoint needs a prefix (the model id is derived from it)")
         for key in vendor:
-            if key not in ("name", "prefix", *categories):
+            if key not in ("name", "prefix", "endpoint", *categories):
                 errors.append(f"slots.yaml vendor {name!r}: unknown key {key!r} (categories are {categories})")
         for cat in categories:
             for m in vendor.get(cat) or []:
@@ -119,8 +150,10 @@ def check_slots(endpoints: dict[str, dict]) -> None:
                     errors.append(f"{where}: presetId {m.get('presetId')} used twice")
                 seen.add(m.get("presetId"))
                 mid = str(m.get("id") or "")
-                if mid not in listed:
+                if own is None and mid not in listed:
                     errors.append(f"{where}: not in the models.default list of {endpoint!r}")
+                if own is not None and mid in listed:
+                    errors.append(f"{where}: runs on {own!r}, so it must not stay in the models.default list of {endpoint!r}")
                 if not mid.startswith(prefix):
                     errors.append(f"{where}: id does not start with the vendor prefix {prefix!r}")
                 if m.get("line") and str(m["line"]) not in mid:
