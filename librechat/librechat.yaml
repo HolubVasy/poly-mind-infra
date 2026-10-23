@@ -3,7 +3,10 @@ version: 1.1.5
 cache: true
 
 # One endpoint. The menu is the presets (models/slots.yaml -> presets.json);
-# this list is exactly the models the presets use, nothing else. The first
+# this list is exactly the models the presets use on it, nothing else. The
+# Claude presets are not here: they run on LibreChat's built-in anthropic
+# endpoint with the owner's own key (ANTHROPIC_API_KEY and ANTHROPIC_MODELS in
+# /opt/LibreChat/.env, never in this repo), see CLAUDE.md. The first
 # model is the silent fallback for a preset whose model is missing - keep it
 # a model we trust. Endpoint-level fetch: and modelOptions: are not in
 # LibreChat's custom-endpoint schema and were removed (2026-09-23), together
@@ -15,11 +18,9 @@ endpoints:
       baseURL: "https://openrouter.ai/api/v1"
       models:
         default: [
-          "anthropic/claude-fable-5.1",
-          "anthropic/claude-opus-5.5",
+          "openai/gpt-6-luna-pro",
           "openai/gpt-6-astra-pro",
           "openai/gpt-6-sol-pro",
-          "openai/gpt-6-luna-pro",
           "google/gemini-3.8-flash",
           "x-ai/grok-4.7"
         ]

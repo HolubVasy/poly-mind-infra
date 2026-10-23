@@ -39,7 +39,6 @@ MENU_END = "<!-- menu:end -->"
 
 # Fields every preset carries besides the ones derived from slots.yaml.
 PRESET_DEFAULTS = {
-    "endpointType": "custom",
     "isArchived": False,
     "maxContextTokens": 900000,
     "resendFiles": True,
@@ -89,13 +88,35 @@ def with_common(slots: dict, text: str) -> str:
     return (common + "\n\n" + text).strip() if common else text.strip()
 
 
-def slot_model(slots: dict, line: str) -> dict:
-    """The model a helper runs on: the one slot whose `line` is `line`.
-    Helpers name a slot, not an id, so a monthly replacement moves them too."""
-    found = [m for _v, _c, m in iter_models(slots) if str(m["line"]) == str(line)]
+def direct_model(vendor: dict, model: dict) -> str:
+    """The model's id on its vendor's own API: the OpenRouter id without the
+    vendor prefix, dots to dashes (anthropic/claude-opus-5.5 gives
+    claude-opus-5-5)."""
+    return str(model["id"])[len(str(vendor["prefix"])):].replace(".", "-")
+
+
+def route(slots: dict, vendor: dict, model: dict) -> dict:
+    """Where a preset sends its requests. By default the custom endpoint of
+    slots.yaml (OpenRouter), with the OpenRouter id. A vendor with its own
+    `endpoint` runs on a built-in LibreChat endpoint, so the preset carries the
+    vendor's own model id and no endpointType."""
+    if "endpoint" in vendor:
+        return {"endpoint": vendor["endpoint"], "model": direct_model(vendor, model)}
+    return {"endpoint": slots["endpoint"], "endpointType": "custom", "model": model["id"]}
+
+
+def slot_entry(slots: dict, line: str) -> tuple[dict, dict]:
+    """The vendor and the model a helper runs on: the one slot whose `line` is
+    `line`. Helpers name a slot, not an id, so a monthly replacement moves them
+    too."""
+    found = [(v, m) for v, _c, m in iter_models(slots) if str(m["line"]) == str(line)]
     if len(found) != 1:
         raise SystemExit(f"ERROR: helper slot {line!r} matches {len(found)} model slots, needs exactly one")
     return found[0]
+
+
+def slot_model(slots: dict, line: str) -> dict:
+    return slot_entry(slots, line)[1]
 
 
 def context_cap(model: dict) -> dict:
@@ -113,15 +134,15 @@ def helper_presets(slots: dict) -> list[dict]:
         text = (h.get("instructions") or "").strip()
         if h.get("instructions_file"):
             text = (text + "\n\n" + (ROOT / h["instructions_file"]).read_text(encoding="utf-8").strip()).strip()
+        vendor, model = slot_entry(slots, h["slot"])
         out.append({
             "presetId": h["presetId"],
-            "endpoint": slots["endpoint"],
-            "model": slot_model(slots, h["slot"])["id"],
+            **route(slots, vendor, model),
             "title": h["title"],
             "promptPrefix": with_common(slots, (h.get("intro", "").strip() + "\n\n" + text).strip()),
             "order": -len(slots["helpers"]) + i,
             **PRESET_DEFAULTS,
-            **context_cap(slot_model(slots, h["slot"])),
+            **context_cap(model),
         })
     return out
 
@@ -156,8 +177,7 @@ def build(slots: dict) -> dict:
     for order, (vendor, category, model) in enumerate(iter_models(slots), start=1):
         presets.append({
             "presetId": model["presetId"],
-            "endpoint": slots["endpoint"],
-            "model": model["id"],
+            **route(slots, vendor, model),
             "title": title_for(vendor, category, model, slots),
             "order": order,
             "promptPrefix": with_common(slots, ""),

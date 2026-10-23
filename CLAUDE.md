@@ -180,6 +180,28 @@ message itself was refused by the context cap. `validate.py` requires the
 titleModel to be in the endpoint's list; the monthly refresh moves it with
 the Luna slot.
 
+**Claude on its own API (2026-10-23), owner's call.** While the owner's own
+Anthropic credit lasts, the Claude vendor in `slots.yaml` carries
+`endpoint: anthropic`: its presets (🧠 Fable, ⚙️ Opus and the helpers on those
+slots) run on LibreChat's built-in `anthropic` endpoint with the key in
+`/opt/LibreChat/.env` (`ANTHROPIC_API_KEY`, `ANTHROPIC_MODELS`), not through
+OpenRouter. `build_presets.py` derives the model id from the slot's `id` (vendor
+prefix off, dots to dashes: `anthropic/claude-opus-5.5` gives `claude-opus-5-5`),
+so a monthly replacement moves the buttons as before, and Claude models are not
+in the "Все" list any more. This needed a change to `build_presets.py` and
+`validate.py`, which the rule below forbids Claude to touch: the owner allowed
+the exception explicitly, for this change only. What to know:
+- The key is a regular API key that expires on 2026-11-13 and the credit runs out
+  at about the same time. Nothing in this repo watches it (`Balance` watches
+  OpenRouter only), so when it ends the Claude buttons answer with an
+  authorisation or balance error, and there is no silent fallback to OpenRouter.
+- Going back is one edit: remove `endpoint: anthropic` from the vendor, put the
+  two Claude ids back into the "Все" list, run `build_presets.py`.
+- The context cap of Fable (`max_context`) and the "do not use for texts over 40
+  pages" advice were measured through OpenRouter; they are unchanged here.
+- Conversation titles of a Claude chat are written by the model that answers, as
+  `titleModel` exists only on the "Все" endpoint.
+
 **The rule that broke the presets on 2026-09-22:** a preset's `model` must be in
 the `models.default` list of its `endpoint` in `librechat.yaml`. If it is not,
 LibreChat does not fail - it silently answers with the FIRST model of that list
