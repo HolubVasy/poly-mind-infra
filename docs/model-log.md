@@ -157,3 +157,22 @@
 - «108 мг/мл» → «10,8 мг/мл»: 1 г/л = 1 мг/мл, поэтому 10,8 г/л = 10,8 мг/мл; 108 мг/мл не соответствует 0,1 М.
 
 </details>
+
+## 2026-11-01 · OpenAI/workhorse: `openai/gpt-6.1-sol-pro` vs `openai/gpt-6-sol-pro` -> **failed**
+
+Судья `anthropic/claude-fable-5.1`: кандидат: no answer: HTTP Error 402: Payment Required
+
+<details><summary>Текущая: openai/gpt-6-sol-pro</summary>
+
+````
+(нет ответа)
+````
+
+</details>
+<details><summary>Кандидат: openai/gpt-6.1-sol-pro</summary>
+
+````
+(нет ответа)
+````
+
+</details>

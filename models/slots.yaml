@@ -198,11 +198,11 @@ vendors:
     flagship: []
     workhorse: []
     cheap:
-      - { id: google/gemini-3.8-flash, presetId: dcd5732f-6ace-4ad8-b965-97dbb6a13229, label: "Gemini 3.8 Flash", line: flash, out_per_m: 3.75, rank: 2, purpose: "Быстрый вопрос, быт" }
+      - { id: google/gemini-3.8-flash, presetId: dcd5732f-6ace-4ad8-b965-97dbb6a13229, label: "Gemini 3.8 Flash", line: flash, out_per_m: 4.125, rank: 2, purpose: "Быстрый вопрос, быт" }
 
   - name: Grok
     prefix: x-ai/
     flagship: []
     workhorse:
-      - { id: x-ai/grok-4.7, presetId: 07dbbec8-c752-480c-b036-2143241c052b, label: "Grok 4.7", line: grok, out_per_m: 4.8, rank: 3, purpose: "Статья или НИР до 20 страниц" }
+      - { id: x-ai/grok-4.7, presetId: 07dbbec8-c752-480c-b036-2143241c052b, label: "Grok 4.7", line: grok, out_per_m: 6, rank: 3, purpose: "Статья или НИР до 20 страниц" }
     cheap: []
